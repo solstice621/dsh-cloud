@@ -1,6 +1,6 @@
 {
   "name": "dsh-cloud-plugin",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Persistent remote DSH tasks across devices and self-hosted runners",
   "type": "module",
   "main": "host.js",

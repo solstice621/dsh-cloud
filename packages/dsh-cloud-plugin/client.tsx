@@ -7,10 +7,10 @@ import type {} from "@deepseek-ai/dsh-client-ui-workspace/client";
 import type {} from "@deepseek-ai/dsh-client-ui-settings/client";
 import type { ISessions } from "@deepseek-ai/dsh-api-session-controller/client";
 import { remote } from "./remote.ts";
+import { canChooseLocation, CloudIcon, LocationPicker } from "./location.tsx";
 
 export const inject = ["remote", "slots", "sessions", "uiWorkspace", "conversation"];
-const css = `.dsh-cloud-native{color:var(--dsw-alias-label-primary);font:inherit;font-size:13px}.dsh-cloud-native button,.dsh-cloud-native input,.dsh-cloud-native select{font:inherit;color:inherit}.dsh-cloud-native button{cursor:pointer;border:0;border-radius:var(--dsw-radius-md,8px);padding:6px 9px;background:transparent}.dsh-cloud-native button:hover{background:var(--dsw-alias-interactive-bg-hover)}.dsh-cloud-native button:disabled{opacity:.45;cursor:default}.dsh-cloud-native input,.dsh-cloud-native select{box-sizing:border-box;width:100%;border:1px solid var(--dsw-alias-border-main,#8885);border-radius:8px;background:var(--dsw-alias-bg-layer-1,transparent);padding:8px}.dsh-cloud-native label{display:grid;gap:6px;margin:12px 0}.dsh-cloud-native small{color:var(--dsw-alias-label-secondary);font-size:12px}.dsh-cloud-native p{margin:10px 0;line-height:1.6}.dsh-cloud-native .cloud-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.dsh-cloud-native .cloud-error{color:var(--dsw-alias-status-error,#c44)}.dsh-cloud-native .cloud-popover{position:absolute;bottom:calc(100% + 8px);left:0;min-width:280px;width:min(340px,80vw);max-height:65vh;overflow:auto;padding:16px;box-shadow:var(--dsw-elevation-prominent,0 8px 28px #0003);border:1px solid var(--dsw-alias-border-main,#8884);border-radius:12px;background:var(--dsw-alias-bg-layer-2,#fff);z-index:80}.dsh-cloud-native .cloud-line{padding:12px 0;border-bottom:1px solid var(--dsw-alias-border-main,#8883)}.dsh-cloud-native a{color:inherit;text-decoration:underline}.dsh-cloud-native pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.6 monospace;max-height:260px;overflow:auto}`;
-function CloudIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M6 18a4.5 4.5 0 0 1-.8-8.9A6.5 6.5 0 0 1 17.6 8a5 5 0 0 1 .4 10H6Z"/></svg>; }
+const css = `.dsh-cloud-native{color:var(--dsw-alias-label-primary);font:inherit;font-size:13px}.dsh-cloud-native button,.dsh-cloud-native input,.dsh-cloud-native select{font:inherit;color:inherit}.dsh-cloud-native button{cursor:pointer;border:0;border-radius:var(--dsw-radius-md,8px);padding:6px 9px;background:transparent}.dsh-cloud-native button:hover{background:var(--dsw-alias-interactive-bg-hover)}.dsh-cloud-native button:disabled{opacity:.45;cursor:default}.dsh-cloud-native input,.dsh-cloud-native select{box-sizing:border-box;width:100%;border:1px solid var(--dsw-alias-border-main,#8885);border-radius:8px;background:var(--dsw-alias-bg-layer-1,transparent);padding:8px}.dsh-cloud-native label{display:grid;gap:6px;margin:12px 0}.dsh-cloud-native small{color:var(--dsw-alias-label-secondary);font-size:12px}.dsh-cloud-native p{margin:10px 0;line-height:1.6}.dsh-cloud-native .cloud-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.dsh-cloud-native .cloud-error{color:var(--dsw-alias-status-error,#c44)}.dsh-cloud-native .cloud-popover{position:absolute;bottom:calc(100% + 8px);left:0;min-width:160px;width:max-content;max-width:min(340px,80vw);max-height:65vh;overflow:auto;padding:6px;box-shadow:var(--dsw-elevation-prominent,0 8px 28px #0003);border:1px solid var(--dsw-alias-border-main,#8884);border-radius:12px;background:var(--dsw-alias-bg-layer-2,#fff);z-index:80}.dsh-cloud-native.cloud-location{position:relative}.dsh-cloud-native .cloud-location-trigger{display:inline-flex;align-items:center;gap:6px;height:28px;padding:4px 7px;color:var(--dsw-alias-label-secondary);font-size:12px;white-space:nowrap}.dsh-cloud-native button:focus-visible{outline:2px solid var(--dsw-alias-label-primary);outline-offset:2px}.dsh-cloud-native .cloud-location-options{display:grid;gap:2px}.dsh-cloud-native .cloud-location-options button{display:flex;align-items:center;gap:8px;text-align:left;padding:8px}.dsh-cloud-native .cloud-location-options button[aria-pressed=true]{background:var(--dsw-alias-interactive-bg-hover)}.dsh-cloud-native .cloud-location-check{margin-left:auto;font-size:12px}.dsh-cloud-native .cloud-location-setup{width:min(300px,70vw);padding:8px;border-top:1px solid var(--dsw-alias-border-main,#8883);margin-top:6px}.dsh-cloud-native .cloud-line{padding:12px 0;border-bottom:1px solid var(--dsw-alias-border-main,#8883)}.dsh-cloud-native a{color:inherit;text-decoration:underline}.dsh-cloud-native pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.6 monospace;max-height:260px;overflow:auto}`;
 type Api = (payload: any) => Promise<any>;
 type State = { sessions: any[]; defaults: any; runners: any[]; templates: any[]; signedIn: boolean; error?: string; info?: any };
 
@@ -59,18 +59,35 @@ export function apply(ctx: Context) {
         useEffect(() => { if (!login) return; const timer = setInterval(() => void invoke({ op: "finishLogin" }).then(r => { if (r.state === "approved") { setLogin(undefined); void refresh(); void sessions.refresh(); } }).catch(e => setError(e.message)), 2000); return () => clearInterval(timer); }, [login]);
         return <><p>连接云端后，在原生会话中选择执行位置。</p>{login ? <><p>授权码：<strong>{login.userCode}</strong></p><a href={login.verificationUri} target="_blank" rel="noreferrer">在浏览器中登录并授权</a><p><small>完成授权后自动连接。</small></p></> : <button onClick={() => void actions(async () => setLogin(await invoke({ op: "beginLogin" })), setError)}>登录云端</button>}{error && <p role="alert" className="cloud-error">{error}</p>}</>;
       }
-      function Location({ sessionId, useSession }: any) {
-        const s = useCloud(), entry = s.sessions.find(v => v.sessionId === sessionId), blank = useSession((v: any) => v?.blank), [open, setOpen] = useState(false), [error, setError] = useState("");
-        const fixed = entry ? !entry.draft : !blank;
-        return <div className="dsh-cloud-native" style={{ position: "relative" }}><button aria-label="执行位置" aria-expanded={open} title={fixed ? "执行位置在会话开始后固定" : "选择执行位置"} onClick={() => setOpen(!open)} className="cloud-row">{entry ? <CloudIcon/> : <span aria-hidden="true">⌘</span>}{entry ? "云端" : "此计算机"}<span aria-hidden="true">⌄</span></button>{open && <div className="cloud-popover"><div className="cloud-row"><strong>执行位置</strong><button style={{ marginLeft: "auto" }} aria-label="关闭执行位置" onClick={() => setOpen(false)}>×</button></div>{fixed ? <p>{entry ? `云端 · ${entry.runnerName ?? "已绑定节点"}` : "此计算机"}<br/><small>此会话的执行位置已固定。新建会话时可选择其他位置。</small></p> : <><div className="cloud-row"><button onClick={() => void actions(async () => { if (entry) await carry(sessionId, await sessions.create()); setOpen(false); }, setError)}>此计算机</button><span>云端</span></div>{s.signedIn ? <Configuration initial={s.defaults} submitLabel="使用云端" onSubmit={async config => { const r = await invoke({ op: "native", action: "draft", data: config }); await refresh(); await sessions.refresh(); await carry(sessionId, r.sessionId); setOpen(false); }} /> : <Login/>}</>}{error && <p role="alert">{error}</p>}</div>}</div>;
+      function Location({ sessionId, useSession, useInput }: any) {
+        const s = useCloud(), entry = s.sessions.find(v => v.sessionId === sessionId);
+        const inputPhase = useInput((v: any) => v?.phase);
+        const [setup, setSetup] = useState(false);
+        const available = useSession((v: any) => canChooseLocation(v, entry, inputPhase));
+        const startCloud = async (config: any) => {
+          const r = await invoke({ op: "native", action: "draft", data: config });
+          await refresh(); await sessions.refresh(); await carry(sessionId, r.sessionId);
+          setSetup(false);
+        };
+        return <LocationPicker key={sessionId} available={available} cloud={!!entry} onSelect={async cloud => {
+          if (!cloud) { if (entry) await carry(sessionId, await sessions.create()); setSetup(false); return true; }
+          if (entry) return true;
+          if (s.signedIn && s.defaults.runnerId && s.defaults.repo && s.templates.some((t: any) => t.id === s.defaults.templateId && t.version === s.defaults.templateVersion) && s.runners.some((r: any) => r.id === s.defaults.runnerId)) {
+            await startCloud(s.defaults); return true;
+          }
+          setSetup(true); return false;
+        }}>
+          {setup && (s.signedIn ? <Configuration initial={s.defaults} submitLabel="使用云端" onSubmit={startCloud}/> : <Login/>)}
+        </LocationPicker>;
       }
       function Settings() {
-        const s = useCloud(), [pair, setPair] = useState<any>(), [error, setError] = useState("");
-        return <div className="dsh-cloud-native"><h3>云端执行</h3>{!s.signedIn ? <Login/> : <><p><small>{s.info?.publicUrl}</small></p><div className="cloud-line"><strong>默认执行环境</strong><Configuration initial={s.defaults} submitLabel="保存默认设置" onSubmit={async data => { await invoke({ op: "native", action: "defaults", data }); }} /></div><div className="cloud-line"><strong>执行节点</strong>{s.runners.map((r: any) => <div className="cloud-row cloud-line" key={r.id}><span>{r.name} · {r.platform}</span><small>{Date.now() - r.lastSeenAt < 45000 ? "在线" : "离线"}</small><button style={{ marginLeft: "auto" }} onClick={() => { if (confirm(`撤销节点 ${r.name}？该节点上的任务将暂停。`)) void actions(() => request(`/v1/runners/${r.id}/revoke`, {}), setError); }}>撤销</button></div>)}<button onClick={() => void actions(async () => setPair(await request("/v1/runner-pairings", {})), setError)}>添加执行节点</button>{pair && <p>配对码：<code>{pair.code}</code><br/><small>在执行机器上运行 Runner 配对命令。</small></p>}</div><button onClick={() => void actions(async () => { await invoke({ op: "logout" }); set({ signedIn: false, sessions: [] }); }, setError)}>退出云端登录</button></>}{error && <p role="alert" className="cloud-error">{error}</p>}</div>;
+        const s = useCloud(), [pair, setPair] = useState<any>(), [error, setError] = useState(""), [selected, setSelected] = useState("");
+        const tasks = s.sessions.filter(v => !v.draft && v.taskId), selectedId = tasks.some(v => v.sessionId === selected) ? selected : tasks[0]?.sessionId;
+        return <div className="dsh-cloud-native"><h3>云端执行</h3>{!s.signedIn ? <Login/> : <><p><small>{s.info?.publicUrl}</small></p><div className="cloud-line"><strong>云端会话</strong>{tasks.length ? <><label>选择会话<select value={selectedId} onChange={e => setSelected(e.target.value)}>{tasks.map(v => <option key={v.sessionId} value={v.sessionId}>{v.title || "未命名会话"}{v.paused ? " · 已暂停" : ""}</option>)}</select></label><CloudStatus key={selectedId} sessionId={selectedId}/></> : <p><small>新建会话时选择云端，发送消息后会在此显示。</small></p>}</div><div className="cloud-line"><strong>默认执行环境</strong><Configuration initial={s.defaults} submitLabel="保存默认设置" onSubmit={async data => { await invoke({ op: "native", action: "defaults", data }); }} /></div><div className="cloud-line"><strong>执行节点</strong>{s.runners.map((r: any) => <div className="cloud-row cloud-line" key={r.id}><span>{r.name} · {r.platform}</span><small>{Date.now() - r.lastSeenAt < 45000 ? "在线" : "离线"}</small><button style={{ marginLeft: "auto" }} onClick={() => { if (confirm(`撤销节点 ${r.name}？该节点上的任务将暂停。`)) void actions(() => request(`/v1/runners/${r.id}/revoke`, {}), setError); }}>撤销</button></div>)}<button onClick={() => void actions(async () => setPair(await request("/v1/runner-pairings", {})), setError)}>添加执行节点</button>{pair && <p>配对码：<code>{pair.code}</code><br/><small>在执行机器上运行 Runner 配对命令。</small></p>}</div><button onClick={() => void actions(async () => { await invoke({ op: "logout" }); set({ signedIn: false, sessions: [] }); }, setError)}>退出云端登录</button></>}{error && <p role="alert" className="cloud-error">{error}</p>}</div>;
       }
       function CloudStatus({ sessionId }: any) {
         const s = useCloud(), entry = s.sessions.find(v => v.sessionId === sessionId);
-        const [detail, setDetail] = useState<any>(), [open, setOpen] = useState(false), [error, setError] = useState("");
+        const [detail, setDetail] = useState<any>(), [open, setOpen] = useState(true), [error, setError] = useState("");
         const [ack, setAck] = useState(false), [armed, setArmed] = useState(false), [diff, setDiff] = useState<string>();
         useEffect(() => {
           setArmed(false); setAck(false); setDiff(undefined);
@@ -102,7 +119,7 @@ export function apply(ctx: Context) {
           </div>
           {(open || !!t.paused) && <div className="cloud-line">
             {last?.result?.error && <p role="alert">{last.result.error === "cancel_requested" ? "本轮已停止。" : last.result.error}</p>}
-            {recovering && <><p><small>{armed ? "下一条消息将作为恢复指令，在下方原生输入框发送。" : "确认恢复后，在下方输入框发送新的指令。旧的排队输入将取消。"}</small></p>
+            {recovering && <><p><small>{armed ? "已准备好恢复。返回会话发送新的指令。" : "确认恢复后，返回会话发送新的指令。旧的排队输入将取消。"}</small></p>
               {prior.state === "uncertain" && <label className="cloud-row"><input style={{ width: "auto" }} type="checkbox" checked={ack} onChange={e => setAck(e.target.checked)}/>我已检查外部操作可能产生的结果</label>}
               <button disabled={armed || (prior.state === "uncertain" && !ack)} onClick={() => void actions(async () => { await invoke({ op: "native", action: "recover", data: { sessionId, previousRunId: prior.id, acknowledgeUncertain: ack } }); setArmed(true); }, setError)}>{armed ? "等待恢复指令" : "准备恢复会话"}</button>
             </>}
@@ -122,7 +139,6 @@ export function apply(ctx: Context) {
       }
       const registrations = [
         ctx.slots.inject("conversation.input.left", () => ctx.slots.register({ name: "conversation.input.left", id: "dsh-cloud-location", order: -100 }, Location)),
-        ctx.slots.inject("conversation.input.dock", () => ctx.slots.register({ name: "conversation.input.dock", id: "dsh-cloud-status", order: 10 }, CloudStatus)),
         ctx.slots.inject("settings.section", () => ctx.slots.register({ name: "settings.section", id: "dsh-cloud", order: 60, label: () => "云端执行" }, Settings)),
         ctx.slots.inject("sidebar.session.row.leading", () => ctx.slots.register({ name: "sidebar.session.row.leading", id: "dsh-cloud-badge", order: 10 }, ({ sessionId }: any) => { const s = useCloud(); return s.sessions.some(v => v.sessionId === sessionId) ? <span title="云端会话" aria-label="云端会话"><CloudIcon/></span> : null; })),
       ];

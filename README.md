@@ -2,7 +2,7 @@
 
 把一个任务固定到同一个 **DSH 原生 Session、持久工作区和执行节点**，从 DSH 插件或浏览器继续访问。客户端退出不会停止任务。这个仓库包含可运行的控制服务、Runner、Executor、网页、DSH 插件、GitHub Draft PR 发布和部署脚本。
 
-当前版本：`0.1.1`。桌面插件已在 DSH `0.2.1-rc.5` 实测，也兼容开发时固定的 `0.2.2-alpha.2`；远端 DSH / SDK 固定为 `0.2.2-alpha.2`、Node `24.19.0`。适用于本人管理的单用户服务。当前验收结果与尚未实测的环境见 [验收记录](docs/TEST_REPORT.md)；原始设计见 [设计方案](docs/DESIGN.md)。
+服务版本：`0.1.1`，桌面插件版本：`0.1.2`。桌面插件已在 DSH `0.2.1-rc.5` 实测，也兼容开发时固定的 `0.2.2-alpha.2`；远端 DSH / SDK 固定为 `0.2.2-alpha.2`、Node `24.19.0`。适用于本人管理的单用户服务。当前验收结果与尚未实测的环境见 [验收记录](docs/TEST_REPORT.md)；原始设计见 [设计方案](docs/DESIGN.md)。
 
 ## 先运行本地演示
 
@@ -79,7 +79,7 @@ npm run runner:service -- install --config /absolute/path/to/runner-config.json 
 ```sh
 npm run build
 npm pack ./dist/plugin --pack-destination .
-dsh plugin --profile desktop add /absolute/path/to/dsh-cloud-plugin-0.1.1.tgz
+dsh plugin --profile desktop add /absolute/path/to/dsh-cloud-plugin-0.1.2.tgz
 ```
 
 在目标 profile 的 `package.json` 中，将 `dsh-cloud-plugin` 加入 `dsh.profile.bundles` 数组，保留原有 bundle。在该 profile 的 `cordis.patch.yml` 追加：
@@ -92,11 +92,11 @@ dsh plugin --profile desktop add /absolute/path/to/dsh-cloud-plugin-0.1.1.tgz
 
 桌面端使用 `desktop` profile；独立 Web Host 使用 `web` profile。重启对应 DSH 后：
 
-1. 在原有设置的「云端执行」登录，或在新会话输入框旁的「此计算机」→「云端」中登录。浏览器确认设备授权后，Host 保存设备凭据。
-2. 新建原生会话，选择「云端」、执行节点、模板及 Git 仓库，再用原来的输入框发送第一条消息。
+1. 在原有设置的「云端执行」登录，或在新会话输入框旁的「本地」→「云端」中登录。浏览器确认设备授权后，Host 保存设备凭据。
+2. 新建原生会话，输入框只显示一个紧凑的「本地 / 云端」选择器。首次选择云端时配置执行节点、模板及 Git 仓库；已有默认配置时直接切换，再用原来的输入框发送第一条消息。
 3. 云端会话出现在原有侧栏，用云图标区分；消息、工具、提问、授权和文件预览都使用 DSH 原有组件。
-4. 输入后位置固定。追问继续原 Session / Environment；停止后需恢复时，先点「准备恢复会话」，再在原输入框输入新指令。
-5. 「云端结果」提供检查、Diff、Draft PR 和空闲环境停止。待答时 DSH 原生卡片接管输入区，需先处理问题才能回到常规停止按钮。
+4. 发送首条消息后隐藏位置选择器，对话框不再显示执行位置、节点状态或云端结果条；只有侧栏历史条目保留云图标。追问继续原 Session / Environment。
+5. 设置 →「云端执行」→「云端会话」提供检查、Diff、Draft PR、空闲环境停止及恢复操作。停止后需恢复时，在这里选择会话并点「准备恢复会话」，再返回原会话输入新指令。待答时仍使用 DSH 原生卡片。
 
 插件不再注册独立的云任务主面板。打开云端历史不会创建本地 Agent 或本地 Session 文件。已识别的云端 ID 在断线、退出登录或凭据失效后也不会回退到本地执行。每台设备各自登录同一 owner。
 
