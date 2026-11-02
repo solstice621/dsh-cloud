@@ -1,0 +1,40 @@
+name: dsh-cloud
+services:
+  control:
+    image: dsh-cloud-control:0.1.1
+    build:
+      context: ../..
+      dockerfile: deploy/control/Dockerfile
+    restart: unless-stopped
+    env_file: ../../.env
+    environment:
+      CLOUD_HOST: 0.0.0.0
+      CLOUD_DATABASE: /data/control.sqlite
+      CLOUD_ARTIFACT_ROOT: /data/artifacts
+    volumes:
+      - control-data:/data
+      - ../templates.json:/app/deploy/templates.json:ro
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,size=64m
+    networks: [cloud]
+  https:
+    image: caddy:2.10.2-alpine
+    restart: unless-stopped
+    environment:
+      CLOUD_DOMAIN: ${CLOUD_DOMAIN:?Set CLOUD_DOMAIN}
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks: [cloud]
+    depends_on:
+      control:
+        condition: service_healthy
+volumes:
+  control-data:
+  caddy-data:
+  caddy-config:
+networks:
+  cloud:

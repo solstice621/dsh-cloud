@@ -1,0 +1,5 @@
+- insert:
+    - id: dsh-cloud-plugin
+      name: dsh-cloud-plugin
+      config:
+        serviceUrl: http://127.0.0.1:8787

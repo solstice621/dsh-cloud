@@ -1,0 +1,179 @@
+{
+  "date": "2026-11-02",
+  "typecheck": "passed",
+  "build": "passed",
+  "controlAndGit": {
+    "passed": 18,
+    "failed": 0,
+    "command": "npm test",
+    "cases": [
+      "idempotent creation and simultaneous inputs preserve one session and strict execution order",
+      "native history is contiguous, conflict checked, replayable and survives database restart",
+      "paired identities are scoped; expired/fenced credentials and foreign tasks are rejected",
+      "cancellation remains pending until the supervisor confirms the process tree stopped",
+      "uncertain input pauses the queue and recovery waits for the old environment to stop",
+      "only one concurrent answer is accepted; restored runtimes reject old questions",
+      "runner and device pairing tolerate lost response without issuing a second identity",
+      "browser writes need a matching Origin and runner revocation invalidates active task tokens",
+      "real Git publication reconciles lost PR response, reuses commits, updates one PR and refuses remote changes",
+      "file preview rejects traversal and symlinks outside the workspace or into Git metadata",
+      "database restore blocks dispatch until every Runner stops; old input never replays",
+      "artifact receipt is durable, idempotent, integrity checked and scoped to the owner",
+      "real streaming model proxy records returned usage, enforces model and call budget",
+      "backup and restore produce a new integrity-checked database in reconciliation mode",
+      "revocation accepts only a stop acknowledgement and closes active runs after confirmation",
+      "database write exhaustion cannot acknowledge an uncommitted native checkpoint",
+      "a consumed pairing code is retryable only inside its original expiry window",
+      "a task pins its model route while allowing credential rotation"
+    ]
+  },
+  "sdk": {
+    "realRuntime": true,
+    "sessionId": "5b5bb308-e157-4bf7-8059-683cd0227c58",
+    "durableSeq": 64,
+    "questions": 1,
+    "approvals": 1,
+    "modelCalls": 7
+  },
+  "macOSRunner": {
+    "docker": true,
+    "runnerOS": "darwin",
+    "taskId": "8b607fea-41dc-4eae-bc48-70d97cf0062e",
+    "sessionId": "da6b7d41-e152-407b-bf7c-0268b93afc6f",
+    "environmentId": "d0e3405a-9158-47b9-8f8e-b0382bccf16d",
+    "epoch": 4,
+    "durableSeq": 99,
+    "forcedCrashRecovery": true,
+    "modelCalls": 12,
+    "cancellationMs": 328
+  },
+  "linuxRunner": {
+    "docker": true,
+    "runnerOS": "linux",
+    "taskId": "fdc3e704-9453-4e95-ad23-eb733706afa4",
+    "sessionId": "c357782c-18df-4075-860e-9c532522b745",
+    "environmentId": "5d32e158-ec45-49c6-982c-ff97bfa8f41f",
+    "epoch": 4,
+    "durableSeq": 102,
+    "forcedCrashRecovery": true,
+    "modelCalls": 12,
+    "cancellationMs": 338
+  },
+  "liveModel": {
+    "realModel": true,
+    "model": "claude-opus-4-8",
+    "providerOrigin": "http://127.0.0.1:6655",
+    "runnerOS": "darwin",
+    "taskId": "330f77fb-64d2-4045-a856-7fa45b3b9320",
+    "sessionId": "ee049cff-35e3-452f-8552-1163225ff68a",
+    "environmentId": "0494db38-3ddd-4047-8b58-759897d6e729",
+    "epoch": 2,
+    "durableSeq": 46,
+    "nativePrefixHash": "304443025d7e5dc438c7297a84144dd286d6eadc494391ea798b1fd4cfcf71d3",
+    "markerHash": "0f1163fa7a3e17d83795f3ca26dbeb106292d2a0a40373b5c5410deb77fa1e99",
+    "usage": [
+      {
+        "calls": 3,
+        "inputTokens": 22221,
+        "outputTokens": 234
+      },
+      {
+        "calls": 2,
+        "inputTokens": 15485,
+        "outputTokens": 140
+      }
+    ],
+    "verified": [
+      "real model file write/read",
+      "same session and environment after container stop",
+      "native prefix unchanged",
+      "second model turn read original file"
+    ]
+  },
+  "amd64Runtime": {
+    "passed": true,
+    "network": "none",
+    "hostMounts": false,
+    "uid": 1000,
+    "probeLog": "initialize ok\ncheckpoint {\n  exists: true,\n  header: {\n    version: 4,\n    id: 'eadf553e-14bc-419d-9b20-192ce7a33e94',\n    createdAt: 1793597522921,\n    cwd: '/tmp/dsh-cloud-m0-s7z0aF/workspace',\n    isSeeded: false,\n    delegationDepth: 0\n  },\n  events: [\n    {\n      type: 'permission/preset',\n      seq: 0,\n      time: 1793597522927,\n      data: [Object]\n    },\n    {\n      type: 'sandbox/mode',\n      seq: 1,\n      time: 1793597522929,\n      data: [Object]\n    },\n    {\n      type: 'approval/policy',\n      seq: 2,\n      time: 1793597522929,\n      data: [Object]\n    }\n  ],\n  durableSeq: 2\n}\nresumed /tmp/dsh-cloud-m0-s7z0aF/workspace\nroot /tmp/dsh-cloud-m0-s7z0aF\n"
+  },
+  "controlContainer": {
+    "passed": true,
+    "health": {
+      "ok": true,
+      "protocol": 1,
+      "dshVersion": "0.2.2-alpha.2"
+    },
+    "network": "none",
+    "temporaryData": true
+  },
+  "compose": "configuration valid using example placeholders",
+  "plugin": {
+    "id": "dsh-cloud-plugin@0.1.0",
+    "name": "dsh-cloud-plugin",
+    "version": "0.1.0",
+    "size": 85775,
+    "unpackedSize": 398205,
+    "shasum": "ff12bb14cb47825605be111d1a76795f37e3ecea",
+    "integrity": "sha512-JQSYI4dRHphn6mgYYr9zSELViNHlQIuQoe0qT3D0GdYQf21JoXzm2XVO0rG/GV2263m4sxck5AZce5wvbq3IHA==",
+    "filename": "dsh-cloud-plugin-0.1.0.tgz",
+    "files": [
+      {
+        "path": "client.js",
+        "size": 378538,
+        "mode": 420
+      },
+      {
+        "path": "cordis.patch.yml",
+        "size": 122,
+        "mode": 420
+      },
+      {
+        "path": "host.js",
+        "size": 18448,
+        "mode": 420
+      },
+      {
+        "path": "package.json",
+        "size": 1097,
+        "mode": 420
+      }
+    ],
+    "entryCount": 4,
+    "bundled": []
+  },
+  "manualUI": {
+    "browser": "Google Chrome",
+    "clients": "two independent DSH_HOME Host profiles and one browser session",
+    "verified": [
+      "device login",
+      "same task history",
+      "queued followups",
+      "cross-client question answer",
+      "same workspace file",
+      "file preview",
+      "diff",
+      "checks and artifacts",
+      "originating DSH client exit while task continued"
+    ],
+    "screenshots": [
+      "dsh-plugin.jpg",
+      "web-task.jpg"
+    ]
+  },
+  "limits": [
+    "OIDC provider and public HTTPS deployment not configured",
+    "No external GitHub PR was created; actual Git push and PR response loss were tested against isolated fixtures",
+    "No standalone physical Linux server or persistent user service installation",
+    "No exhaustive crash injection at every SDK ack and native flush boundary",
+    "No long-duration stress, physical power loss or cross-node migration testing"
+  ],
+  "localDemo": {
+    "demoRestart": true,
+    "taskId": "d7ed7709-ee33-4539-87fd-e3185055ecdb",
+    "sessionId": "8c6434ed-1c35-4e4e-a7bf-23ca45c32224",
+    "epoch": 2,
+    "runs": 2,
+    "modelRoute": "local-demo-fixture"
+  }
+}

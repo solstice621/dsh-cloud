@@ -1,0 +1,122 @@
+{
+  "formatVersion": 1,
+  "projectVersion": "0.1.0",
+  "createdAt": "2026-11-02T05:34:47.786206+00:00",
+  "dsh": {
+    "version": "0.2.2-alpha.2",
+    "sourceCommit": "ce7073d51254c26cd63b22a60835b8f948deb447"
+  },
+  "cloudProtocol": 1,
+  "databaseSchema": 1,
+  "node": "v24.19.0",
+  "npm": "11.17.0",
+  "docker": "28.3.2",
+  "host": {
+    "os": "Darwin",
+    "architecture": "arm64"
+  },
+  "npmLockSha256": "f070d007e7aff39b8eca5211250b6968c823d9ee1a72611b8bfd48297d7fda5f",
+  "sourceManifestSha256": "75b482a64ddf1ffab1b57754adfb671172dfa7917e9255285faf5ab63a340e39",
+  "sourceFileSha256": {
+    ".dockerignore": "7baaba32960350e37374779a103876429c0d19469a7a37b8e4bc269faea1b732",
+    ".env.example": "c03586432c474003d3306e85082f13119d975fa0b0d94fed9746cbee195cc6ee",
+    ".gitignore": "3d64557f40591b8bcf1bef4de9d71245489059650d138d7dae54daf3da24e8db",
+    "apps/control/auth.ts": "a5595b484c9ae92d3d3ac59214394c417ff029dceafcf1d56d87323ee34ccbe8",
+    "apps/control/config.ts": "5cd1e055e838c1e78f80bfd543b3e946b55226351887303bab0bd73e3a67609e",
+    "apps/control/db.ts": "a955aaf5793d4fa572c4ff08d4c9706e15849f2fad5f6a6c4426cad4a4bf4657",
+    "apps/control/http.ts": "c59001989f0e4dee48e66386c4a23e482d304a3e8ebe18cb6b0c10648f3f86e3",
+    "apps/control/main.ts": "721008d06b8a79a9911895ce11e839bba92b5ffa9c0f1a338f46817c8cf14b55",
+    "apps/control/recovery.ts": "d325e1144ec4a0dd3352a2c76bf81d0c530b22f38fb9398674da59651decd996",
+    "apps/control/server.ts": "b6ac3e7ee0ce7f7a01a03be50d5efb8a0bce4aa42445f3859f9b3f13647e0edc",
+    "apps/control/usage.ts": "eb140905fa708c84f17edf9824f1cde32e538e3d53aac886d5c8e7380f1ba27e",
+    "apps/executor/executor.ts": "24ebdf8cc46892e27e7154bcfdd3fa850d82d98259dfe393b06a23f7eab89638",
+    "apps/executor/journal.ts": "5431bdd15581407e90e792246ceb5f655408ffdd3648d403f67083a068c4175c",
+    "apps/executor/main.ts": "e7de54863d3180614486c82b1999e564e56ccb685c5260070b5b5f37871f960c",
+    "apps/executor/runtime.ts": "7e94bdd3845dfb9c482268c03a920e30a49ffa0b11a6d9e7c39c519ec8548cbc",
+    "apps/runner/docker.ts": "3306bfbd9d1a703fea30d1f4d018d64d5266cb458508fc3883a68e543c348941",
+    "apps/runner/main.ts": "fea69d6828cfc49508cde1590ef0d2acda738cceed04bfbb4f8320f851ce0093",
+    "apps/runner/runner.ts": "31d6c66a2ac3750dbdfa4c5a94f40cc44b6ddd85b2f15ac33d1aec89c965fdfb",
+    "apps/web/index.html": "ff71c868ffdaac0ecf5a169e73847b3530531fc2a703442fab11a46268688f45",
+    "apps/web/main.tsx": "5e0b94e483ab96f549937281523c84768debfef5678fc380a732f558524a83f2",
+    "apps/web/style.css": "0e977fa503b2c436e675e62db414a927aa3dd9781837dc7afd3c5dce2969950e",
+    "deploy/control/Caddyfile": "133dc4b9dbbd3a3d72f69ebde1f3561191695c41ebf582799fb768a911b10a77",
+    "deploy/control/Dockerfile": "6c22891e1711618685f15ac0f54e5e17d162f4b62a5997a29fceb29a639bdf80",
+    "deploy/control/compose.yaml": "2219621f8bdf7723315dcb2d6eeb63071021b8810321880f670bddfbdfd2b7d0",
+    "deploy/runner/Dockerfile.acceptance": "f7ca822610c7d9eaad681979f2dc499736f40d6d626f5938987630e8fce89c95",
+    "deploy/runner/runner.env.example": "858e12944288ac53d6387447c01b1bd02bcee7a3510be244a42d51424223ddee",
+    "deploy/runtime-images/Dockerfile": "33104a4b22c1bec56073224f1ad73e25baa82409cb24d937c41427aa408b5c0a",
+    "deploy/templates.json": "75a70fe7091a724edfa3a6ea1583995810ec5b3301de21dcd6ddebbffb77b480",
+    "package-lock.json": "f070d007e7aff39b8eca5211250b6968c823d9ee1a72611b8bfd48297d7fda5f",
+    "package.json": "f10d44e503a3fb753fd7e8d16df0ac307c9fb4b24d22716725aa8cd461e926e0",
+    "packages/contracts/http.ts": "2a0a292b2d34f22438aa73ea19621e5f1f17fb645517482aeb5436fe03c346c8",
+    "packages/contracts/index.ts": "29c472a01e11a984afaeabf6d61e5c74f6d1989b34ad3bd6609b19af33a1fea7",
+    "packages/contracts/process.ts": "1ef237105e32418a83bfa6e7311085533d4cd51b160f9795569f9945d22938d0",
+    "packages/contracts/storage.ts": "44d81e771d8158aed473976553fe249aec550ac950655a7dfed63d69e63d84cc",
+    "packages/dsh-cloud-plugin/client.tsx": "c846b4132a41cffd9466cd5c515d866569b7cf72d5bd40202339b216a298510e",
+    "packages/dsh-cloud-plugin/cordis.patch.yml": "cbad32a2cc7e03db3b4468be512a800ea615864049e4aa9aedc5e5f0e708fa7e",
+    "packages/dsh-cloud-plugin/index.ts": "df2444fbc986c111ba5e533ea271c2a4edce529a31d97c79c259f8a03fb28c5d",
+    "packages/dsh-cloud-plugin/package.json": "11180e79b4299b79704a0c3be9b94992ee13664e167b3ab8b75a9920778b839b",
+    "packages/dsh-cloud-plugin/remote.ts": "0153ba8047f4c46a1ec2757732d104b5253440b6271884d231762881d231183e",
+    "packages/dsh-cloud-runtime/index.ts": "8068a708610242ce12e37293852fbdd942c03e95568541848ceeb3c9ffcb8466",
+    "packages/git-provider/index.ts": "64c3ebce1521b17524e3cdbad0ff227a3500e430f52635f4709c93eba17ef161",
+    "packages/task-ui/app.tsx": "55bebd85bc84994534a19a1feb7162f2600276ea7be965860cc2954d1883e9cb",
+    "packages/task-ui/styles.ts": "f694de7392c57c2303a03608cee764cb3369e8acc7a79a6fadecf3a34a4090ad",
+    "packages/task-ui/transport.ts": "ff7213c1da891e64bd77f18474fb238bb98444f05a5b1b143c6e684ad108cbac",
+    "packages/testing/model-fixture.ts": "6551c6927398572681fe43e3301d1395aee2312d4079cc9ce001bf942ebeea15",
+    "scripts/build.mjs": "a6c92c9148d817a1ed01b0c605a91970de4dfa5e8d4630aef2c499f5044d84be",
+    "scripts/clean.mjs": "593281d3c6367736e5bea81b2175eafaf2b14e0ff5479ebf5c9814e582eaef66",
+    "scripts/demo.ts": "7c6b4019b406392b88b4d79a4d837059b48948c2c3481a2134a3c74f596da2f9",
+    "scripts/doctor.ts": "f3f6f646b20184b6a313bfd6d7e2c10ae20c8a429f3630ddee7cc11d3177e2a6",
+    "scripts/maintenance.ts": "67265dd62fe72d46f2a093fef491db1818d86a6ab8c54948d16273b5a7938719",
+    "scripts/probe-runtime.ts": "09207ba7d9eb7e08d89fce1278685f0535b417ce815a8ec1c272876a3dcf49f9",
+    "scripts/runner-service.sh": "02855632621066c9af2604bc6457e0a2012f8e8b6da671720fc9a1de880e58a1",
+    "scripts/runner-service.ts": "b91f7f1c672cc1084a116357408171d2b91d70aeee4b78a3297aa57b72377417",
+    "scripts/test-linux-runner.ts": "b71869f2606fd4548ea1482fc60a7d07c7920d4f1e043ef7c62bacd3217cc8f8",
+    "scripts/test-live-model.ts": "a2f72a014313d0eedf0c7b250182749769b0a32595a8c7a7ba04df1b8a8bb218",
+    "tests/control.test.ts": "9a8b85ed80bc7121ca0cc2e0a70aca098df87178515686fa832ea823ea727f86",
+    "tests/git.test.ts": "bfdfc897e323707e460aaca5e339094dc0f26884b7d532ddabf7a007a6c6cbe2",
+    "tests/helpers.ts": "2d22ca72a17e68573a9e3803673d6325ee69a46dd41824590090cfd2c25f9ca3",
+    "tests/model-fixture.ts": "b527c0abd24192053acd586f71024de87530c7b108c188ce3d6cdd41aaefbe8e",
+    "tests/reliability.test.ts": "57044b1d8b2bc5e23186de457d5031c1bc705defd5d310abb8eb9f6bdc94691b",
+    "tests/runtime/docker.test.ts": "cc342f9ae94214028e4389b3398a049238c4e949e89b55e80903b622b5a96194",
+    "tests/runtime/sdk.test.ts": "28d20db4a21df7cb652184b71328b4d10311d1cea7cbb4af7e4147c9816dfec3",
+    "tsconfig.build.json": "11a46def93f2bd744c03bc08b18c6a211ea7bbd2f99bc7d7057687728baa72c3",
+    "tsconfig.json": "4792cc890a3905b75dc9e51d22099fd825f672383cb64458fb8e7b746d952469"
+  },
+  "images": [
+    {
+      "tag": "dsh-cloud-runtime:0.1.0",
+      "id": "sha256:1520532a88fc6972fa3c78ee79d71a4058784b6d9c9bbf296865fe484f4ed56d",
+      "os": "linux",
+      "architecture": "arm64"
+    },
+    {
+      "tag": "dsh-cloud-runtime:0.1.0-amd64",
+      "id": "sha256:d8940e1f20163999d90cc7db2cedc77069684a19dfbfeb13a3ee7cce644ace33",
+      "os": "linux",
+      "architecture": "amd64"
+    },
+    {
+      "tag": "dsh-cloud-control:0.1.0",
+      "id": "sha256:e6243b9b80c7bfa3213057d03659df249cb1d3dd64023972139ca35fe41bf98b",
+      "os": "linux",
+      "architecture": "arm64"
+    },
+    {
+      "tag": "dsh-cloud-linux-acceptance:0.1.0",
+      "id": "sha256:1d9ac48e50776cbb4076c05f05b82b93cd71a16b4e52754e724ac37de8bfce70",
+      "os": "linux",
+      "architecture": "arm64"
+    }
+  ],
+  "nodeBase": {
+    "indexDigest": "sha256:a9f5f7c91a432850b2a8a7797adf5eadb6c733ceed61167806cee7ea7fbc29df",
+    "manifestDigest": "sha256:e5a8dee7bc1e6a215d224a7ef8206f7e77271bc3cabd5febf2beafac0674f174",
+    "configDigest": "sha256:622f209f6c16ba5af4d9a337cae6577d096f17174b904cfc6a5b0c81a2679c24",
+    "architecture": "amd64"
+  },
+  "notes": [
+    "Runtime image tags are local validation builds; distribute images by an immutable digest in your own registry.",
+    "The amd64 runtime was executed under emulation; the Linux Runner acceptance process ran in a trusted Linux container on Docker Desktop."
+  ]
+}

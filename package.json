@@ -1,0 +1,48 @@
+{
+  "name": "dsh-cloud",
+  "version": "0.1.1",
+  "private": true,
+  "type": "module",
+  "description": "Persistent DSH tasks across devices and self-hosted runners",
+  "engines": {
+    "node": ">=24.19.0 <25"
+  },
+  "scripts": {
+    "build": "node scripts/clean.mjs && tsc -p tsconfig.build.json && node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "control": "node --import tsx apps/control/main.ts",
+    "runner": "node --import tsx apps/runner/main.ts",
+    "executor": "node --import tsx apps/executor/main.ts",
+    "test:runtime": "node --import tsx --test tests/runtime/*.test.ts",
+    "doctor": "node --import tsx scripts/doctor.ts",
+    "runner:service": "node --import tsx scripts/runner-service.ts",
+    "backup": "node --import tsx scripts/maintenance.ts",
+    "demo": "node --import tsx scripts/demo.ts"
+  },
+  "dependencies": {
+    "@deepseek-ai/dsh": "0.2.2-alpha.2",
+    "@deepseek-ai/dsh-sdk-client": "0.2.2-alpha.2",
+    "openid-client": "6.8.1",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "yaml": "2.8.1",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@deepseek-ai/dsh-client-ui-slots": "0.2.2-alpha.2",
+    "@types/node": "24.10.0",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
+    "esbuild": "0.25.12",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3"
+  },
+  "allowScripts": {
+    "@deepseek-ai/dsh-subprocess-local@0.2.2-alpha.2": true,
+    "esbuild@0.25.12": true,
+    "koffi@3.1.1": true,
+    "node-pty@1.2.0-beta.15": true,
+    "protobufjs@7.6.6": true
+  }
+}

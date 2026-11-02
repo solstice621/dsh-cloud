@@ -1,0 +1,11 @@
+# Test-only Linux supervisor; the Docker socket belongs only to this trusted Runner.
+FROM dsh-cloud-runtime:0.1.1
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends docker.io && rm -rf /var/lib/apt/lists/*
+COPY apps /acceptance/apps
+COPY packages /acceptance/packages
+COPY tests /acceptance/tests
+COPY package.json /acceptance/package.json
+RUN ln -s /app/node_modules /acceptance/node_modules && ln -s /app/dist /acceptance/dist
+WORKDIR /acceptance
+CMD ["node", "--experimental-transform-types", "--test", "tests/runtime/docker.test.ts"]
