@@ -1,189 +1,81 @@
 {
-  "date": "2026-11-02",
-  "projectVersion": "0.1.1",
-  "typecheck": "passed",
-  "build": "passed",
-  "controlGitAndNative": {
-    "command": "npm test",
-    "passed": 24,
-    "failed": 0,
-    "cases": [
-      "idempotent creation and simultaneous inputs preserve one session and strict execution order",
-      "native history is contiguous, conflict checked, replayable and survives database restart",
-      "paired identities are scoped; expired/fenced credentials and foreign tasks are rejected",
-      "cancellation remains pending until the supervisor confirms the process tree stopped",
-      "uncertain input pauses the queue and recovery waits for the old environment to stop",
-      "only one concurrent answer is accepted; restored runtimes reject old questions",
-      "runner and device pairing tolerate lost response without issuing a second identity",
-      "browser writes need a matching Origin and runner revocation invalidates active task tokens",
-      "real Git publication reconciles lost PR response, reuses commits, updates one PR and refuses remote changes",
-      "file preview rejects traversal and symlinks outside the workspace or into Git metadata",
-      "native adapter preserves one remote identity, retries prompt once and never activates a local Agent",
-      "control saves the exact native header and rejects a changed session identity",
-      "native file adapter confines cloud paths and leaves local file operations intact",
-      "native rename, pin and archive stay in cloud metadata without creating a local Session",
-      "stored early templates receive conservative defaults when dispatched",
-      "native history subscription survives a control outage and publishes idle without a control subscriber",
-      "database restore blocks dispatch until every Runner stops; old input never replays",
-      "artifact receipt is durable, idempotent, integrity checked and scoped to the owner",
-      "real streaming model proxy records returned usage, enforces model and call budget",
-      "backup and restore produce a new integrity-checked database in reconciliation mode",
-      "revocation accepts only a stop acknowledgement and closes active runs after confirmation",
-      "database write exhaustion cannot acknowledge an uncommitted native checkpoint",
-      "a consumed pairing code is retryable only inside its original expiry window",
-      "a task pins its model route while allowing credential rotation"
-    ]
+  "version": "0.1.3",
+  "recordedAt": "2026-11-03T09:02:39.986078+00:00",
+  "baseCommit": "52bf4216245bb6562a82602691471eacb01553a0",
+  "deliveryState": {
+    "built": true,
+    "installed": "isolated cloud-reliability profile",
+    "runtimeVerified": true,
+    "targetVerified": "DSH Host native UI in Chrome",
+    "electronDesktopWindowRetested": false,
+    "userDesktopProfileUpdated": false,
+    "deployedToExistingService": false,
+    "pushedToGitHubAtValidation": false
   },
-  "sdk": {
-    "realRuntime": true,
-    "sessionId": "e405794f-672c-4298-9dce-12dac1832b2b",
-    "durableSeq": 64,
-    "questions": 1,
-    "approvals": 1,
-    "modelCalls": 7
-  },
-  "macOSRunner": {
-    "docker": true,
-    "runnerOS": "darwin",
-    "taskId": "092f421c-3ca0-4550-a03a-cd93b06bad3a",
-    "sessionId": "2a18b22c-7fb0-44f1-b54c-f9c4d92cb1a1",
-    "environmentId": "e52fa844-5c24-4181-bc0b-0b028edcbdca",
-    "epoch": 4,
-    "durableSeq": 102,
-    "forcedCrashRecovery": true,
-    "modelCalls": 12,
-    "cancellationMs": 379
-  },
-  "nativeDesktop": {
-    "dshVersion": "0.2.1-rc.5",
-    "pluginVersion": "0.1.1",
-    "model": "local-demo-fixture",
-    "task": {
-      "id": "f9f9f0b1-f160-4c90-bef1-f6b8457b8b4d",
-      "sessionId": "3c31e13c-dafc-490e-8363-d70a035f62dd",
-      "environmentId": "49a37dd2-d9a7-4a01-8eea-ce93afbbb78e",
-      "epoch": 5,
-      "durableSeq": 93,
-      "environmentState": "stopped"
+  "checks": {
+    "typecheck": "passed",
+    "build": "passed",
+    "diffCheck": "passed",
+    "automatedTests": {
+      "passed": 43,
+      "failed": 0
     },
-    "runs": [
-      {
-        "ordinal": 1,
-        "state": "succeeded",
-        "kind": "normal"
-      },
-      {
-        "ordinal": 2,
-        "state": "succeeded",
-        "kind": "normal"
-      },
-      {
-        "ordinal": 3,
-        "state": "succeeded",
-        "kind": "normal"
-      },
-      {
-        "ordinal": 4,
-        "state": "cancelled",
-        "kind": "normal"
-      },
-      {
-        "ordinal": 5,
-        "state": "succeeded",
-        "kind": "recovery"
-      },
-      {
-        "ordinal": 6,
-        "state": "succeeded",
-        "kind": "normal"
-      }
-    ],
-    "markerSha256": "878d98d4d47c405d98011017e761960be24f7589b477706dcce909666632b55e",
-    "nativeFileReadAfterIdleStop": true,
-    "sameSessionAndEnvironment": true,
-    "originalModelsConfigurationUnchanged": true,
-    "localNativeSessionFiles": 0,
-    "checksConfigured": 0,
-    "verified": [
-      "native sidebar and location selector",
-      "native user message and assistant/tool rendering",
-      "device authorization",
-      "original native question card",
-      "desktop exit while remote question stayed pending",
-      "restart desktop and answer same pending question",
-      "native workspace file list and Markdown preview",
-      "completed run returns to idle",
-      "native stop and Runner confirmation",
-      "explicit recovery through original composer",
-      "idle environment stop and followup reads retained file"
-    ],
-    "screenshots": [
-      "native-desktop.jpg"
-    ],
-    "screenshotSha256": "c0fcd71fb284edd14023ae5e2ace12269dd49c49733d05cb29ec0c8b878e8b77"
+    "runtimeTests": {
+      "passed": 2,
+      "failed": 0
+    }
   },
-  "plugin": {
-    "id": "dsh-cloud-plugin@0.1.1",
-    "name": "dsh-cloud-plugin",
-    "version": "0.1.1",
-    "size": 85825,
-    "unpackedSize": 399033,
-    "shasum": "1c80f2fca3eca450f22e74271ee7fdd31f1828a9",
-    "integrity": "sha512-CWi5wo5gMvBDBG5NN6D6BDymxCp++eN2HYnG4ZFFETLtSslRPeBWyU0LkaZt8dmVQCIXMhoQKPlRfY0UGb0NJA==",
-    "filename": "dsh-cloud-plugin-0.1.1.tgz",
-    "files": [
-      {
-        "path": "client.js",
-        "size": 347461,
-        "mode": 420
-      },
-      {
-        "path": "cordis.patch.yml",
-        "size": 122,
-        "mode": 420
-      },
-      {
-        "path": "host.js",
-        "size": 49321,
-        "mode": 420
-      },
-      {
-        "path": "package.json",
-        "size": 2129,
-        "mode": 420
-      }
-    ],
-    "entryCount": 4,
-    "bundled": []
+  "polling": {
+    "hosts": 4,
+    "openedIdleSessionsPerHost": 20,
+    "virtualSeconds": 90,
+    "initialRequests": 168,
+    "backgroundRequests": 100,
+    "http429": 0,
+    "clock": "controlled virtual time; actual HTTP and SQLite"
   },
-  "executionTestImage": "sha256:c1d7ee7fb1305816b7d8f79366a1370edca5e1d7d6c577624333ace55bf193c9",
-  "baselineReferences": {
-    "version": "0.1.0",
-    "results": "acceptance-results-0.1.0.json",
-    "compatibility": "compatibility-lock-0.1.0.json",
-    "notRerunIn011": [
-      "Linux Runner",
-      "amd64 runtime emulation",
-      "real HAI upstream model",
-      "two independent Web Host profiles"
-    ]
+  "runtime": {
+    "executorDSH": "0.2.2-alpha.2",
+    "hostDSH": "0.2.1-rc.5",
+    "runnerOS": "darwin",
+    "containerPlatform": "linux/arm64",
+    "model": "deterministic local fixture",
+    "docker": {
+      "epoch": 4,
+      "durableSeq": 102,
+      "forcedCrashRecovery": true,
+      "lostDeliveryReceiptRecovered": true,
+      "modelCalls": 12,
+      "cancellationMs": 223
+    },
+    "sdk": {
+      "durableSeq": 64,
+      "questions": 1,
+      "approvals": 1,
+      "modelCalls": 7
+    }
   },
-  "limits": [
-    "Current desktop demo uses fixed local model replies, not a live upstream model",
-    "OIDC provider and public HTTPS deployment not configured",
-    "No external GitHub PR created",
-    "Native adapter supports pinned DSH versions and is not a public remote-provider API",
-    "Cloud attachments, forks, model switching and local terminal are unsupported",
-    "No exhaustive SDK ack/flush crash injection or physical-host failover"
+  "ui": [
+    "device login",
+    "native cloud sidebar and history",
+    "native input and question card",
+    "answer completes",
+    "result and check display",
+    "transient failure retains signed-in state",
+    "offline logout removes local credential",
+    "revocation warning survives closing and reopening settings"
   ],
-  "desktopDemo": {
-    "state": "running locally, temporary process; no permanent service installed",
-    "restart": "../启动桌面云端演示.command",
-    "dataExportedInPackage": false
-  },
-  "postExecutionTestChanges": [
-    "Native UI cancellation and stopped-environment copy only",
-    "Demo reads latest text block when consecutive user messages are merged",
-    "Demo restart selects a task with an existing matching model route"
+  "finalPackageVerification": "final Host/Client hashes match the installed tarball after reinstall and Host restart; typecheck/build and offline UI check rerun after notice-only change",
+  "limits": [
+    "Standard runtime Dockerfile fresh base pull failed at the configured registry mirror; used a locally verified existing base with matching dependency versions and current dist.",
+    "No current Linux Runner, amd64, real upstream model, public OIDC/TLS, external GitHub PR, long-duration load, or cross-node migration retest.",
+    "Chrome native DSH UI verification is not an Electron desktop window retest.",
+    "Existing tasks pin their original image; no automatic runtime migration."
+  ],
+  "cleanup": "Task-owned demo and Host processes stopped; no running test containers remain; isolated installation and data retained; no permanent service installed.",
+  "evidence": [
+    "reliability-0.1.3/regression-tests.txt",
+    "reliability-0.1.3/runtime-tests.txt",
+    "reliability-0.1.3/offline-logout.jpg"
   ]
 }

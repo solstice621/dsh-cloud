@@ -85,7 +85,10 @@ export function finishRecovery(store: Store) {
         );
       }
       store.exec(
-        "UPDATE tasks SET currentRunId=NULL,paused=1,environmentState='stopped' WHERE id=?",
+        `UPDATE tasks SET currentRunId=NULL,paused=1,environmentState='stopped',recoveryRequired=1,
+          recoveryRunId=COALESCE(recoveryRunId,?,(SELECT id FROM runs WHERE taskId=? ORDER BY COALESCE(startedAt,0) DESC,ordinal DESC LIMIT 1)),
+          recoveryReason='database_restore',restoreId=? WHERE id=?`,
+        t.currentRunId, t.id, mode.id,
         t.id,
       );
       store.exec(

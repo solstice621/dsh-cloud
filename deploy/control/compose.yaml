@@ -1,7 +1,7 @@
 name: dsh-cloud
 services:
   control:
-    image: dsh-cloud-control:0.1.1
+    image: dsh-cloud-control:0.1.3
     build:
       context: ../..
       dockerfile: deploy/control/Dockerfile

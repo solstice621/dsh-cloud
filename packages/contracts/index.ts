@@ -58,6 +58,7 @@ export class CloudError extends Error {
     public status: number,
     public code: string,
     message: string,
+    public retryAfterMs?: number,
   ) {
     super(message);
   }
@@ -186,6 +187,10 @@ export interface Task {
   incarnation: string | null;
   currentRunId: string | null;
   paused: number;
+  recoveryRequired: number;
+  recoveryRunId: string | null;
+  recoveryReason: string | null;
+  restoreId: string | null;
   durableSeq: number;
   workspaceRevision: string | null;
   version: number;

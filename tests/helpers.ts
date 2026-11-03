@@ -12,7 +12,7 @@ import {
 export const template = TemplateSchema.parse({
   id: "test",
   version: "1",
-  image: "dsh-cloud-runtime:0.1.1",
+  image: "dsh-cloud-runtime:0.1.3",
   platforms: ["linux/amd64", "linux/arm64"],
   timeoutSeconds: 120,
   maxModelCalls: 12,

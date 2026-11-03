@@ -64,7 +64,7 @@ const token = secret(),
 const template = TemplateSchema.parse({
   id: "live",
   version: "1",
-  image: "dsh-cloud-runtime:0.1.1",
+  image: "dsh-cloud-runtime:0.1.3",
   platforms: ["linux/amd64", "linux/arm64"],
   minFreeDiskMb: 512,
   timeoutSeconds: 300,

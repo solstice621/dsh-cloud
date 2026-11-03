@@ -2,7 +2,7 @@
 
 把一个任务固定到同一个 **DSH 原生 Session、持久工作区和执行节点**，从 DSH 插件或浏览器继续访问。客户端退出不会停止任务。这个仓库包含可运行的控制服务、Runner、Executor、网页、DSH 插件、GitHub Draft PR 发布和部署脚本。
 
-服务版本：`0.1.1`，桌面插件版本：`0.1.2`。桌面插件已在 DSH `0.2.1-rc.5` 实测，也兼容开发时固定的 `0.2.2-alpha.2`；远端 DSH / SDK 固定为 `0.2.2-alpha.2`、Node `24.19.0`。适用于本人管理的单用户服务。当前验收结果与尚未实测的环境见 [验收记录](docs/TEST_REPORT.md)；原始设计见 [设计方案](docs/DESIGN.md)。
+服务与桌面插件版本：`0.1.3`。本轮在桌面发行版自带的 DSH `0.2.1-rc.5` Host 中安装插件，并通过 Chrome 验证原生会话 UI；Electron 桌面窗口本轮未重跑。适配器支持固定的 `0.2.1-rc.5` / `0.2.2-alpha.2` 接口；远端 DSH / SDK 固定为 `0.2.2-alpha.2`、Node `24.19.0`。适用于本人管理的单用户服务。当前验收结果与尚未实测的环境见 [验收记录](docs/TEST_REPORT.md)；原始设计见 [设计方案](docs/DESIGN.md)。
 
 ## 先运行本地演示
 
@@ -11,7 +11,7 @@
 ```sh
 npm ci
 npm run build
-docker build -t dsh-cloud-runtime:0.1.1 -f deploy/runtime-images/Dockerfile .
+docker build -t dsh-cloud-runtime:0.1.3 -f deploy/runtime-images/Dockerfile .
 npm run demo
 ```
 
@@ -79,7 +79,7 @@ npm run runner:service -- install --config /absolute/path/to/runner-config.json 
 ```sh
 npm run build
 npm pack ./dist/plugin --pack-destination .
-dsh plugin --profile desktop add /absolute/path/to/dsh-cloud-plugin-0.1.2.tgz
+dsh plugin --profile desktop add /absolute/path/to/dsh-cloud-plugin-0.1.3.tgz
 ```
 
 在目标 profile 的 `package.json` 中，将 `dsh-cloud-plugin` 加入 `dsh.profile.bundles` 数组，保留原有 bundle。在该 profile 的 `cordis.patch.yml` 追加：
@@ -114,7 +114,7 @@ CLOUD_DOCKER_TEST=1 npm run test:runtime  # 真实 Docker / Runner / Executor E2
 npm run build
 ```
 
-测试使用隔离的临时目录和带本次 Runner 标签的容器，只清理它们。运行 Docker E2E 前需保证本地存在 `dsh-cloud-runtime:0.1.1`。模型 fixture 只替代上游模型响应，未替代 DSH、文件工具、Shell、Runner 或 Docker。Git 测试实际使用 Git daemon 和 push；GitHub REST 用受控 fixture 注入响应丢失。
+测试使用隔离的临时目录和带本次 Runner 标签的容器，只清理它们。运行 Docker E2E 前需保证本地存在 `dsh-cloud-runtime:0.1.3`。模型 fixture 只替代上游模型响应，未替代 DSH、文件工具、Shell、Runner 或 Docker。Git 测试实际使用 Git daemon 和 push；GitHub REST 用受控 fixture 注入响应丢失。
 
 真实模型验收是可选的独立命令，会消耗实际模型额度。可以使用 `CLOUD_MODEL_BASE_URL`、`CLOUD_MODEL_API_KEY`、`CLOUD_MODEL_NAME`，或显式选择本机 DSH 中已配置的 Messages provider：
 
@@ -136,8 +136,8 @@ node --import tsx scripts/test-linux-runner.ts
 多架构构建可在对应机器上执行同一 Dockerfile，或使用：
 
 ```sh
-docker buildx build --platform linux/amd64 -t dsh-cloud-runtime:0.1.1-amd64 --load -f deploy/runtime-images/Dockerfile .
-docker buildx build --platform linux/arm64 -t dsh-cloud-runtime:0.1.1-arm64 --load -f deploy/runtime-images/Dockerfile .
+docker buildx build --platform linux/amd64 -t dsh-cloud-runtime:0.1.3-amd64 --load -f deploy/runtime-images/Dockerfile .
+docker buildx build --platform linux/arm64 -t dsh-cloud-runtime:0.1.3-arm64 --load -f deploy/runtime-images/Dockerfile .
 ```
 
 本次实际平台与镜像 ID 记录在 `docs/compatibility-lock.json`，没有验证的平台不会标记为已通过。

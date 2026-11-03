@@ -13,8 +13,9 @@ export async function body(
   );
   let size = 0;
   const chunks: Buffer[] = [];
-  for await (const chunk of req) {
+  for await (const chunk of req.iterator({ destroyOnReturn: false })) {
     size += chunk.length;
+    if (size > limit) req.resume();
     requireValue(
       size <= limit,
       "BODY_TOO_LARGE",

@@ -81,8 +81,8 @@ const model = await modelFixture(async (body) => {
 await durableWrite(modelPortPath, String(model.port));
 const template = TemplateSchema.parse({
   id: "demo",
-  version: "2",
-  image: "dsh-cloud-runtime:0.1.1",
+  version: "3",
+  image: "dsh-cloud-runtime:0.1.3",
   platforms: ["linux/arm64", "linux/amd64"],
   checks: [
     {

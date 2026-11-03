@@ -1,5 +1,5 @@
 # Test-only Linux supervisor; the Docker socket belongs only to this trusted Runner.
-FROM dsh-cloud-runtime:0.1.1
+FROM dsh-cloud-runtime:0.1.3
 USER root
 RUN apt-get update && apt-get install -y --no-install-recommends docker.io && rm -rf /var/lib/apt/lists/*
 COPY apps /acceptance/apps

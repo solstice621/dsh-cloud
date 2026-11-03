@@ -1,6 +1,23 @@
 # MVP 验收记录
 
-日期：2026-11-02。当前桌面插件为 0.1.2，服务保持 0.1.1；历史版本的 Runner 验收不能视为本次全部重跑。
+日期：2026-11-03。当前服务与插件版本为 0.1.3。下列各版本证据分别记录，历史验收不视为本轮重跑。
+
+## 0.1.3 可靠性修复
+
+- `npm run typecheck`、`npm run build`、`git diff --check` 通过；`npm test` 共 **43/43** 通过（原有 26 项，加 17 项回归）。最后的退出提示修改后重新完成类型检查、构建和真实页面验证。
+- 桌面同步：4 个 Host、各 20 个已打开空闲会话，90 秒虚拟时间中后台总计 100 次请求，初始读取 168 次，未出现 429；未变化的详情和历史不重复读取。其他设备修改标题后，4 个 Host 各只刷新该会话。另覆盖请求合并、共享 429 退避、临时失败保留登录态。
+- 恢复屏障：`uncertain` / `interrupted` 经归档重开、较新 Run 取消、环境初始化重试和数据库重开后仍阻止普通派发；显式恢复要求停止确认并核对原 Run。schema 1 升级会重建被较新取消项遮住的屏障。
+- 交付：问题与审批均在本地持久记录答案后交给等待者，回执通过 outbox 幂等重试。HTTP / SQLite 回归注入“服务端已提交、响应丢失”，确认本地只消费一次。
+- 永久错误与产物：验证旧备份恢复后的未知 Run 移入核对证据，新代次未知 Run 仍暂停；临时错误保留原队列；核对回执丢失可重试；Diff 和多份日志组合、JSON 转义和 UTF-8 多字节字符均按实际 12 MiB 上传上限测试。停止确认不再依赖成功补传结果。
+- 其余回归：真实 Git clone 后 checkout 前中断的修复、已初始化工作区改动保留、网页首次 history 失败后重建订阅并清理、OIDC discovery 失败后的退避和重新初始化、离线/过期退出，以及退出与并发登录竞争。
+- `CLOUD_DOCKER_TEST=1 npm run test:runtime` 共 **2/2** 通过。真实 DSH SDK 问答、单次授权和原 Session 恢复：durableSeq 64，7 次 fixture 调用。macOS Runner + Docker：强制崩溃恢复、同 Session/Environment、答案提交后主动销毁 HTTP 响应连接、取消确认均通过；最终 epoch 4、durableSeq 102，12 次 fixture 调用，取消确认 223 ms（受控单次结果，不是性能保证）。
+- 实际安装：桌面发行版自带 CLI `0.2.1-rc.5`，隔离 `DSH_HOME`、profile `cloud-reliability`；通过官方 `dsh plugin add --offline` 安装 tarball 并重新启动真实 Host。最终 Host / Client 文件逐字节匹配构建。测试过程中 pnpm 复用了同路径 tarball，改用新路径安装后重新核对哈希。
+- Chrome 中实际操作真实 DSH 原生 UI：设备登录、云端侧栏与历史、原生输入和问答卡、答案完成、结果与检查显示、离线仍保持登录态、离线退出删除凭据。重新打开设置后，远端撤销未确认的提示仍可见。截图见 [离线退出](reliability-0.1.3/offline-logout.jpg)。本轮没有重启或升级用户日常桌面 profile，也没有对 Electron 桌面窗口重新验收。
+- 构建限制：标准 runtime Dockerfile 拉取 Node 基础镜像时镜像站连接失败；本轮复用已核对 Node 与 npm 依赖版本的本机 `dsh-cloud-runtime:0.1.1` 基础镜像，覆盖本轮构建代码。该方式完成 arm64 验收，不能表述为标准 Dockerfile 的全新构建通过。最终镜像仅追加已验证的退出提示，执行测试镜像 ID 与最终镜像 ID 分别记录在 compatibility lock。
+- 使用固定本地模型 fixture；真实 DSH、工具、Git、HTTP、SQLite 与 Docker 运行。没有重新测试真实上游模型、Linux Runner、amd64、公网 OIDC/TLS、外部 GitHub PR、长时间压力或跨节点迁移。
+- 本次专用 Host、演示服务和其任务容器在验收后停止。仅保留隔离安装和测试数据，不安装常驻服务、不迁移已有云任务。
+
+原始日志： [43 项回归](reliability-0.1.3/regression-tests.txt)、[2 项真实运行](reliability-0.1.3/runtime-tests.txt)。修复需要配套升级各组件，部署约束见 [运维说明](OPERATIONS.md#升级)。
 
 ## 0.1.2 简化界面与本机安装
 
@@ -65,7 +82,7 @@
 
 当前构建版本、源码摘要及本机镜像 ID 见 [compatibility-lock.json](compatibility-lock.json)。当前验证状态见 [acceptance-results.json](acceptance-results.json)。0.1.0 基线原始输出保存在 [acceptance-results-0.1.0.json](acceptance-results-0.1.0.json)，源码摘要保存在 [compatibility-lock-0.1.0.json](compatibility-lock-0.1.0.json)。
 
-当前桌面截图：[原生 DSH 桌面](native-desktop.jpg)。旧 [独立插件面板](dsh-plugin.jpg) 是被 0.1.1 替换的界面，仅保留作历史证据；[浏览器入口](web-task.jpg) 仍独立存在。
+当前 0.1.3 截图：[真实 DSH Host 页面中的离线退出](reliability-0.1.3/offline-logout.jpg)。历史 0.1.1 截图：[原生 DSH 桌面](native-desktop.jpg)。旧 [独立插件面板](dsh-plugin.jpg) 是被 0.1.1 替换的界面，仅保留作历史证据；[浏览器入口](web-task.jpg) 仍独立存在。
 
 ## 尚未完成的外部验收
 

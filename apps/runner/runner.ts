@@ -31,6 +31,7 @@ import {
 } from "../../packages/git-provider/index.ts";
 import { durableWrite } from "../../packages/contracts/storage.ts";
 import { Journal } from "../executor/journal.ts";
+import { replayOutbox } from "../../packages/contracts/outbox.ts";
 import { Docker, type Container } from "./docker.ts";
 
 export interface RunnerConfig {
@@ -222,7 +223,6 @@ export class Runner {
         task.environmentState !== "stopped" &&
         task.environmentState !== "error"
       ) {
-        await this.replayStoppedJournal(task);
         const p = this.paths(task.id);
         let result: any = {
           error: `Runtime exited ${current.exitCode}`,
@@ -236,16 +236,7 @@ export class Runner {
             ),
           };
         } catch {}
-        if (current.exitCode === 0)
-          await this.reportStopped(task, current, "runtime_stopped", result);
-        else
-          await this.call(`/v1/runner/environments/${task.id}/error`, {
-            epoch: current.epoch,
-            incarnation: current.incarnation,
-            confirmedStopped: true,
-            reason: "runtime_exited",
-            result,
-          });
+        await this.reportStopped(task, current, current.exitCode === 0 ? "runtime_stopped" : "runtime_exited", result, current.exitCode !== 0);
         continue;
       }
       if (
@@ -264,7 +255,7 @@ export class Runner {
         continue;
       }
       if (
-        !task.paused &&
+        !task.paused && !task.recoveryRequired &&
         task.lifecycle === "open" &&
         task.queued > 0 &&
         !task.currentRunId &&
@@ -390,9 +381,13 @@ export class Runner {
     c: Container,
     reason: string,
     result?: unknown,
+    failed = false,
   ) {
-    await this.replayStoppedJournal(task);
-    return this.call(`/v1/runner/environments/${task.id}/stopped`, {
+    // Give completed output a short opportunity to arrive, but never make proof
+    // of a stopped process depend on successful result delivery.
+    try { await this.replayStoppedJournal(task, AbortSignal.timeout(2000)); }
+    catch (error) { this.log(error); }
+    return this.call(`/v1/runner/environments/${task.id}/${failed ? "error" : "stopped"}`, {
       epoch: c.epoch,
       incarnation: c.incarnation,
       confirmedStopped: true,
@@ -400,7 +395,7 @@ export class Runner {
       ...(result ? { result } : {}),
     });
   }
-  private async replayStoppedJournal(task: Task) {
+  private async replayStoppedJournal(task: Task, signal?: AbortSignal) {
     const p = this.paths(task.id);
     if (
       !existsSync(resolve(p.state, "journal.sqlite")) ||
@@ -424,34 +419,10 @@ export class Runner {
           header: journal.value("nativeHeader", undefined),
           events: batch.map((e) => JSON.parse(e.event)),
           runId: task.currentRunId,
-        });
+        }, { signal });
         after = batch.at(-1).seq;
       }
-      for (const row of journal.all<any>("SELECT * FROM outbox ORDER BY id")) {
-        try {
-          await api(
-            this.config.controlUrl,
-            row.path,
-            config.token,
-            JSON.parse(row.body),
-          );
-        } catch (error) {
-          if (
-            !(
-              error instanceof CloudError &&
-              [
-                "CANCEL_PENDING",
-                "RUN_NOT_CURRENT",
-                "RESULT_CONFLICT",
-                "INTERACTION_STATE",
-                "INTERACTION_STALE",
-              ].includes(error.code)
-            )
-          )
-            throw error;
-        }
-        journal.run("DELETE FROM outbox WHERE id=?", row.id);
-      }
+      await replayOutbox(journal, (path, body) => api(this.config.controlUrl, path, config.token, body, { signal }), task.restoreId ?? null);
     } finally {
       journal.close();
     }

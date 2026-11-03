@@ -13,10 +13,13 @@ export class Journal {
     this.db.exec(`PRAGMA journal_mode=DELETE; PRAGMA synchronous=FULL;
     CREATE TABLE IF NOT EXISTS meta(key TEXT PRIMARY KEY,value TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS commands(id TEXT PRIMARY KEY,runId TEXT NOT NULL,phase TEXT NOT NULL,messageId TEXT,result TEXT);
+    CREATE TABLE IF NOT EXISTS answers(id TEXT PRIMARY KEY,runId TEXT NOT NULL,incarnation TEXT NOT NULL,answer TEXT NOT NULL,consumed INTEGER NOT NULL DEFAULT 0);
     CREATE TABLE IF NOT EXISTS native(seq INTEGER PRIMARY KEY,hash TEXT NOT NULL,event TEXT NOT NULL,runId TEXT);
     CREATE TABLE IF NOT EXISTS rejected_outbox(id INTEGER PRIMARY KEY,path TEXT NOT NULL,body TEXT NOT NULL,reason TEXT NOT NULL,rejectedAt INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS outbox(id INTEGER PRIMARY KEY AUTOINCREMENT,path TEXT NOT NULL,body TEXT NOT NULL,key TEXT UNIQUE);
   `);
+    if (!this.all<any>("PRAGMA table_info(outbox)").some(c => c.name === "restoreId"))
+      this.db.exec("ALTER TABLE outbox ADD COLUMN restoreId TEXT");
   }
   get<T = any>(sql: string, ...params: any[]) {
     return this.db.prepare(sql).get(...params) as T | undefined;
@@ -53,11 +56,19 @@ export class Journal {
   }
   queue(path: string, body: unknown, key?: string) {
     this.run(
-      "INSERT OR IGNORE INTO outbox(path,body,key) VALUES (?,?,?)",
+      "INSERT OR IGNORE INTO outbox(path,body,key,restoreId) VALUES (?,?,?,?)",
       path,
       JSON.stringify(body),
       key ?? null,
+      this.value("restoreId", null),
     );
+  }
+  receiveAnswer(answer: { id: string; runId: string; incarnation: string; answer: unknown }) {
+    const old = this.get<any>("SELECT * FROM answers WHERE id=?", answer.id);
+    requireValue(!old || (old.runId === answer.runId && old.incarnation === answer.incarnation && digest(JSON.parse(old.answer)) === digest(answer.answer)),
+      "ANSWER_CONFLICT", "An interaction already has a different durable answer");
+    this.run("INSERT OR IGNORE INTO answers(id,runId,incarnation,answer) VALUES (?,?,?,?)",
+      answer.id, answer.runId, answer.incarnation, JSON.stringify(answer.answer));
   }
   rejectOutbox(row: any, reason: string) {
     this.tx(() => {

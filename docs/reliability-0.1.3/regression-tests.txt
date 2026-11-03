@@ -1,0 +1,60 @@
+
+> dsh-cloud@0.1.3 test
+> node --import tsx --test tests/*.test.ts
+
+✔ four desktop Hosts with twenty opened idle sessions stay below the shared owner budget (596.023334ms)
+ℹ 4 Hosts / 20 opened idle sessions / 90 virtual seconds: 100 background requests, 168 initial requests, 0 HTTP 429
+✔ read coalescing, shared 429 backoff and transient errors preserve authentication (0.755042ms)
+✔ OIDC discovery failure is shared, backs off, and can subsequently initialize (0.226417ms)
+✔ logout clears local credentials when remote revocation is offline (18.176667ms)
+✔ logout clears local credentials when remote revocation is expired (35.445167ms)
+✔ logout cancels an in-flight device login before it can restore credentials (11.334875ms)
+✔ initial history failure retries the entire subscription and cleans up on unmount (6.221208ms)
+✔ idempotent creation and simultaneous inputs preserve one session and strict execution order (83.544ms)
+✔ native history is contiguous, conflict checked, replayable and survives database restart (4352.02475ms)
+✔ paired identities are scoped; expired/fenced credentials and foreign tasks are rejected (37.029041ms)
+✔ cancellation remains pending until the supervisor confirms the process tree stopped (39.272958ms)
+✔ uncertain input pauses the queue and recovery waits for the old environment to stop (34.409416ms)
+✔ only one concurrent answer is accepted; restored runtimes reject old questions (28.991208ms)
+✔ runner and device pairing tolerate lost response without issuing a second identity (26.577958ms)
+✔ browser writes need a matching Origin and runner revocation invalidates active task tokens (37.932709ms)
+{"level":"warn","taskId":"58b7d7d5-dec2-4834-bfda-df69dc3e014a","error":"response lost after server commit"}
+✔ question reaches a live DSH waiter once when the delivered response is lost (2133.907542ms)
+{"level":"warn","taskId":"ab779cda-e8f1-419f-8e0a-229ff58b4947","error":"response lost after server commit"}
+✔ approval reaches a live DSH waiter once when the delivered response is lost (2064.497583ms)
+✔ transient outbox failures retain their payload and permanently rejected output remains inspectable (53.602666ms)
+✔ real Git publication reconciles lost PR response, reuses commits, updates one PR and refuses remote changes (2119.096333ms)
+✔ file preview rejects traversal and symlinks outside the workspace or into Git metadata (6.129125ms)
+✔ interrupted first checkout reaches its selected commit and preserves initialized or dirty workspaces (727.475208ms)
+✔ native adapter preserves one remote identity, retries prompt once and never activates a local Agent (77.840875ms)
+✔ control saves the exact native header and rejects a changed session identity (40.832875ms)
+✔ native file adapter confines cloud paths and leaves local file operations intact (62.809666ms)
+✔ native rename, pin and archive stay in cloud metadata without creating a local Session (45.711167ms)
+✔ stored early templates receive conservative defaults when dispatched (10.484292ms)
+✔ native history subscription survives a control outage and publishes idle without a control subscriber (4033.420875ms)
+✔ location is offered only before a first local or cloud prompt, including in-flight transitions (0.401667ms)
+✔ started sessions render no location chrome; new sessions render just one compact control (3.976958ms)
+✔ uncertain recovery barrier survives archive, newer cancellation, setup retry and restart (136.955125ms)
+✔ interrupted recovery barrier survives archive, newer cancellation, setup retry and restart (56.102ms)
+✔ schema 1 migration reconstructs an unresolved barrier hidden behind a cancelled Run (29.946917ms)
+✔ restore quarantines old unknown output, while a new unknown Run remains a protocol failure (68.723042ms)
+✔ combined result and status fit actual HTTP limits after UTF-8 and JSON escaping (6901.971583ms)
+✔ stopped-container acknowledgement survives result replay failure (40.157417ms)
+✔ database restore blocks dispatch until every Runner stops; old input never replays (94.165791ms)
+{"level":"error","path":"/v1/artifacts/74f8dc3a-be44-4f2d-a179-11b99837747d","error":"Saved artifact checksum does not match"}
+✔ artifact receipt is durable, idempotent, integrity checked and scoped to the owner (108.808833ms)
+✔ real streaming model proxy records returned usage, enforces model and call budget (36.916875ms)
+✔ backup and restore produce a new integrity-checked database in reconciliation mode (472.22725ms)
+✔ revocation accepts only a stop acknowledgement and closes active runs after confirmation (43.75875ms)
+{"level":"error","path":"/v1/executor/events","error":"database or disk is full"}
+✔ database write exhaustion cannot acknowledge an uncommitted native checkpoint (34.343125ms)
+✔ a consumed pairing code is retryable only inside its original expiry window (12.166ms)
+✔ a task pins its model route while allowing credential rotation (31.173334ms)
+ℹ tests 43
+ℹ suites 0
+ℹ pass 43
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7682.67225

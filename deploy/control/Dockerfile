@@ -1,5 +1,5 @@
 # Build the matching runtime image first; both services share the compatibility lock.
-FROM dsh-cloud-runtime:0.1.1
+FROM dsh-cloud-runtime:0.1.3
 USER root
 RUN mkdir -p /data/artifacts && chown -R node:node /data
 COPY deploy/templates.json /app/deploy/templates.json

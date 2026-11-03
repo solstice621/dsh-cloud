@@ -1,0 +1,3 @@
+FROM dsh-cloud-runtime:0.1.1
+COPY dist /app/dist
+COPY package.json /app/package.json

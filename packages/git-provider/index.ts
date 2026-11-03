@@ -10,6 +10,7 @@ import {
 import { resolve, relative, sep, join } from "node:path";
 import { existsSync } from "node:fs";
 import { processRun } from "../contracts/process.ts";
+import { durableWrite } from "../contracts/storage.ts";
 import {
   requireValue,
   CloudError,
@@ -92,7 +93,19 @@ export async function prepareRepository(
     "INVALID_COMMIT",
     "Could not resolve the task commit",
   );
-  if (!existsSync(resolve(workspace, ".git"))) {
+  const markerPath = resolve(trustedRepo, "dsh-workspace.json");
+  const marker = existsSync(markerPath) ? JSON.parse(await readFile(markerPath, "utf8")) : null;
+  requireValue(!marker || (marker.taskId === task.id && marker.commit === commit && marker.branch === task.branch && marker.repo === task.repo),
+    "WORKSPACE_INIT_CONFLICT", "Workspace initialization belongs to another task or commit");
+  const hasGit = existsSync(resolve(workspace, ".git"));
+  if (marker?.complete || (!marker && task.baseCommit)) {
+    // A previously provisioned workspace may contain user edits and commits.
+    requireValue(hasGit, "WORKSPACE_MISSING", "Original initialized workspace is missing; inspect before recovery");
+    return commit;
+  }
+  const identity = { taskId: task.id, commit, branch: task.branch, repo: task.repo };
+  await durableWrite(markerPath, JSON.stringify({ ...identity, complete: false }));
+  if (!hasGit) {
     await mkdir(workspace, { recursive: true });
     // Only this known, daemon-owned mirror may use local file transport.
     await processRun(
@@ -108,9 +121,19 @@ export async function prepareRepository(
       ],
       { env: cleanEnv(), timeout: 120000 },
     );
-    await git(["-C", workspace, "checkout", "-b", task.branch, commit]);
-    await git(["-C", workspace, "remote", "set-url", "origin", task.repo]);
   }
+  const dirty = (await git(["-C", workspace, "status", "--porcelain", "--untracked-files=all"])).stdout;
+  requireValue(!dirty, "WORKSPACE_INIT_INCOMPLETE", "Interrupted initialization has workspace changes; preserve and inspect them before retrying");
+  const head = (await git(["-C", workspace, "rev-parse", "HEAD"])).stdout.trim();
+  const defaultHead = (await git(["--git-dir", trustedRepo, "rev-parse", "HEAD"])).stdout.trim();
+  requireValue(head === commit || head === defaultHead, "WORKSPACE_INIT_INCOMPLETE", "Interrupted initialization has unexpected commits; inspect before retrying");
+  const branch = await git(["-C", workspace, "rev-parse", "--verify", `refs/heads/${task.branch}`], { allowFailure: true });
+  requireValue(branch.code !== 0 || branch.stdout.trim() === commit, "WORKSPACE_INIT_INCOMPLETE", "The task branch contains unexpected commits");
+  await git(["-C", workspace, "checkout", "-B", task.branch, commit]);
+  await git(["-C", workspace, "remote", "set-url", "origin", task.repo]);
+  requireValue((await git(["-C", workspace, "rev-parse", "HEAD"])).stdout.trim() === commit,
+    "WORKSPACE_INIT_INCOMPLETE", "Initialized workspace does not match its recorded commit");
+  await durableWrite(markerPath, JSON.stringify({ ...identity, complete: true }));
   return commit;
 }
 export async function snapshot(

@@ -17,6 +17,7 @@ import {
 } from "../contracts/index.ts";
 import { remote } from "./remote.ts";
 import { NativeCloudSessions } from "./native.ts";
+import { ReadCoordinator } from "./polling.ts";
 
 export const name = "dsh-cloud-plugin";
 export const inject = ["typert", "tools", "sessionController", "sessionProjections", "typertGateway", "workspaceFiles", "workspaceController", "workspaceRegistry"];
@@ -46,6 +47,9 @@ export class CloudService extends TypertRemoteService {
   native: NativeCloudSessions;
   private token = "";
   private pending: any;
+  private reads = new ReadCoordinator();
+  private authGeneration = 0;
+  private credentialWrites: Promise<unknown> = Promise.resolve();
   private ready: Promise<void>;
   private credentialFile: string;
   readonly url: string;
@@ -114,12 +118,25 @@ export class CloudService extends TypertRemoteService {
       "Sign in to the cloud workspace first",
       401,
     );
-    return api(this.url, path, this.token, body, {
+    const token = this.token;
+    const send = async () => {
+      const value = await api(this.url, path, token, body, {
       headers:
         body === undefined
           ? {}
           : { "idempotency-key": key ?? crypto.randomUUID() },
-    });
+      });
+      requireValue(token === this.token, "UNAUTHORIZED", "Cloud login changed", 401);
+      return value;
+    };
+    if (body === undefined) return this.reads.read(path, send);
+    this.reads.invalidate();
+    try { return await send(); } finally { this.reads.invalidate(); }
+  }
+  private credentials<T>(operation: () => Promise<T>) {
+    const write = this.credentialWrites.then(operation, operation);
+    this.credentialWrites = write.catch(() => {});
+    return write;
   }
   @Remote
   async invoke(payload: string): Promise<string> {
@@ -136,7 +153,10 @@ export class CloudService extends TypertRemoteService {
         value = await this.request(data.path, data.body, data.key);
       else if (data.op === "native") value = await this.native.invoke(data.action, data.data);
       else if (data.op === "beginLogin") {
-        this.pending = await api(this.url, "/auth/device", "", {});
+        const generation = ++this.authGeneration;
+        const pending = await api(this.url, "/auth/device", "", {});
+        requireValue(generation === this.authGeneration, "LOGIN_CANCELLED", "Login was cancelled");
+        this.pending = pending;
         value = {
           verificationUri: this.pending.verificationUri,
           userCode: this.pending.userCode,
@@ -148,11 +168,14 @@ export class CloudService extends TypertRemoteService {
           "LOGIN_REQUIRED",
           "Start device login first",
         );
+        const pending = this.pending, generation = this.authGeneration;
         const result = await api<any>(this.url, "/auth/device/token", "", {
-          deviceId: this.pending.deviceId,
-          pollToken: this.pending.pollToken,
+          deviceId: pending.deviceId,
+          pollToken: pending.pollToken,
         });
         if (result.state === "approved") {
+          await this.credentials(async () => {
+          requireValue(generation === this.authGeneration && pending === this.pending, "LOGIN_CANCELLED", "Login was cancelled");
           await mkdir(dirname(this.credentialFile), {
             recursive: true,
             mode: 0o700,
@@ -163,17 +186,32 @@ export class CloudService extends TypertRemoteService {
             { mode: 0o600 },
           );
           await rename(this.credentialFile + ".tmp", this.credentialFile);
+          requireValue(generation === this.authGeneration, "LOGIN_CANCELLED", "Login was cancelled");
           this.token = result.token;
           this.pending = undefined;
+          this.reads.reset();
+          });
         }
         value = { state: result.state };
       } else {
-        await this.ready;
-        if (this.token) await api(this.url, "/auth/logout", this.token, {});
+        await this.ready.catch(() => {});
+        this.ready = Promise.resolve();
+        const token = this.token;
+        this.authGeneration++;
         this.token = "";
+        this.pending = undefined;
+        this.reads.reset();
         this.native.signOut();
-        await rm(this.credentialFile, { force: true });
-        value = { ok: true };
+        await this.credentials(async () => {
+          await rm(this.credentialFile, { force: true });
+          await rm(this.credentialFile + ".tmp", { force: true });
+        });
+        let revoked = !token, warning: string | undefined;
+        if (token) {
+          try { await api(this.url, "/auth/logout", token, {}, { timeout: 5000 }); revoked = true; }
+          catch { warning = "本地登录已清除；远端凭据撤销未确认。网络恢复后可在服务端撤销该设备。"; }
+        }
+        value = { ok: true, revoked, warning };
       }
       return JSON.stringify({ ok: true, value });
     } catch (error) {
@@ -183,6 +221,7 @@ export class CloudService extends TypertRemoteService {
           message: redact(error),
           status: error instanceof CloudError ? error.status : 500,
           code: error instanceof CloudError ? error.code : "CLOUD_ERROR",
+          retryAfterMs: error instanceof CloudError ? error.retryAfterMs : undefined,
         },
       });
     }

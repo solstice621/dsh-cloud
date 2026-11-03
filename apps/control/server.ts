@@ -26,6 +26,8 @@ import { Auth } from "./auth.ts";
 import { body, json, idempotency, textInput } from "./http.ts";
 import { validateRepo, type ControlConfig } from "./config.ts";
 import { recoveryState, finishRecovery } from "./recovery.ts";
+import { outboxFailure } from "../../packages/contracts/outbox.ts";
+import { RESULT_BODY_LIMIT } from "../../packages/contracts/results.ts";
 import { UsageMeter } from "./usage.ts";
 import { durableWrite } from "../../packages/contracts/storage.ts";
 
@@ -627,14 +629,13 @@ export class ControlService {
             );
             requireValue(
               prior &&
-                ["interrupted", "uncertain", "cancelled", "failed"].includes(
-                  prior.state,
-                ),
+                (t.recoveryRequired ? prior.id === t.recoveryRunId && (terminalStates.includes(prior.state as any) || prior.state === "queued") :
+                  ["interrupted", "uncertain", "cancelled", "failed"].includes(prior.state)),
               "INVALID_RECOVERY",
               "Select a failed or interrupted Run",
             );
             requireValue(
-              prior.state !== "uncertain" || d.acknowledgeUncertain,
+              (prior.state !== "uncertain" && t.recoveryReason !== "database_restore") || d.acknowledgeUncertain,
               "UNCERTAIN_ACK_REQUIRED",
               "Acknowledge the uncertain external result before continuing",
             );
@@ -654,13 +655,15 @@ export class ControlService {
                 queued.id,
               );
             }
-            s.exec("UPDATE tasks SET paused=0 WHERE id=?", taskId);
-          } else
+            s.exec("UPDATE tasks SET paused=0,recoveryRequired=0,recoveryRunId=NULL,recoveryReason=NULL WHERE id=?", taskId);
+          } else {
+            s.assertRecovered(taskId);
             requireValue(
               !t.paused,
               "QUEUE_PAUSED",
               "Resume the task or submit a recovery input",
             );
+          }
           const run = s.enqueue(
             taskId,
             d.input,
@@ -681,15 +684,7 @@ export class ControlService {
           "RUN_ACTIVE",
           "Wait for the original execution to stop",
         );
-        const latest = s.one<Run>(
-          "SELECT * FROM runs WHERE taskId=? AND state!='queued' ORDER BY ordinal DESC LIMIT 1",
-          taskId,
-        );
-        requireValue(
-          !latest || !["uncertain", "interrupted"].includes(latest.state),
-          "RECOVERY_REQUIRED",
-          "Use an explicit recovery input",
-        );
+        s.assertRecovered(taskId);
         s.exec("UPDATE tasks SET paused=0 WHERE id=?", taskId);
         s.event(taskId, "queue.resumed", {});
       });
@@ -725,9 +720,8 @@ export class ControlService {
                 ? "open"
                 : "delete_pending";
           s.exec(
-            "UPDATE tasks SET lifecycle=?,paused=? WHERE id=?",
+            "UPDATE tasks SET lifecycle=? WHERE id=?",
             lifecycle,
-            d.action === "reopen" ? 0 : 1,
             taskId,
           );
           s.event(taskId, "task." + lifecycle, {});
@@ -991,6 +985,7 @@ export class ControlService {
           credential.subject,
         )) {
           if (t.currentRunId) {
+            this.store.requireRecovery(t.id, t.currentRunId, "interrupted");
             const result = JSON.stringify({
               error:
                 "Runner revoked; supervisor confirmed all containers stopped",
@@ -1357,7 +1352,7 @@ export class ControlService {
             row.id,
           );
         if (row.kind === "retry-setup" && d.state === "succeeded")
-          s.exec("UPDATE tasks SET paused=0 WHERE id=?", row.taskId);
+          s.exec("UPDATE tasks SET paused=0 WHERE id=? AND recoveryRequired=0", row.taskId);
         if (row.kind === "delete" && d.state === "succeeded") {
           s.exec(
             "UPDATE tasks SET lifecycle='deleted',environmentState='deleted' WHERE id=?",
@@ -1415,10 +1410,12 @@ export class ControlService {
           dshVersion: z.literal(DSH_VERSION),
           journalRunId: uuid.nullable(),
           phase: z.string(),
+          restoreId: uuid.nullable().optional(),
         })
         .strict()
         .parse(await body(req));
-      const uncertain = !!(
+      const restoredJournal = !!t.restoreId && t.restoreId !== (d.restoreId ?? null);
+      const uncertain = !restoredJournal && !!(
         d.journalRunId &&
         d.journalRunId !== t.currentRunId &&
         !s.one(
@@ -1434,7 +1431,7 @@ export class ControlService {
         });
       } else
         s.exec(
-          "UPDATE tasks SET environmentState=CASE WHEN currentRunId IS NULL THEN 'ready' ELSE 'busy' END WHERE id=?",
+          "UPDATE tasks SET environmentState=CASE WHEN environmentState='needs_stop' THEN environmentState WHEN currentRunId IS NULL THEN 'ready' ELSE 'busy' END WHERE id=?",
           t.id,
         );
       json(res, {
@@ -1451,6 +1448,27 @@ export class ControlService {
         digest(c.token),
       );
       json(res, { token: c.token, expiresIn: 3600 });
+      return;
+    }
+    if (path === "/v1/executor/reconciliation" && method === "POST") {
+      const d = z.object({
+        id: z.string().regex(/^[a-f0-9]{64}$/), path: z.string().max(300),
+        code: z.string().max(100), status: z.number().int().min(400).max(499),
+        runId: uuid.nullable(), restoreId: uuid.nullable(),
+        bodyHash: z.string().regex(/^[a-f0-9]{64}$/), bytes: z.number().int().nonnegative(),
+      }).strict().parse(await body(req));
+      const failure = outboxFailure(new CloudError(d.status, d.code, d.code), d, t.restoreId);
+      requireValue(failure, "RETRY_REQUIRED", "This delivery error is retryable");
+      const result = s.idempotent(`outbox:${t.id}`, d.id, d, () => {
+        if (failure.blocking) {
+          const prior = t.currentRunId ?? s.one<any>("SELECT id FROM runs WHERE taskId=? ORDER BY ordinal DESC LIMIT 1", t.id)?.id ?? null;
+          s.requireRecovery(t.id, prior, "delivery_rejected");
+          s.exec("UPDATE tasks SET environmentState='needs_stop' WHERE id=?", t.id);
+        }
+        s.event(t.id, "outbox.reconciliation", { ...d, ...failure, evidence: "executor/journal.sqlite:rejected_outbox" });
+        return { ok: true, ...failure };
+      });
+      json(res, result);
       return;
     }
     if (path === "/v1/executor/commands" && method === "GET") {
@@ -1481,7 +1499,7 @@ export class ControlService {
         paused: t.paused,
         answers: s
           .all<any>(
-            "SELECT id,answer,incarnation FROM interactions WHERE taskId=? AND incarnation=? AND state='submitted'",
+            "SELECT id,runId,answer,incarnation FROM interactions WHERE taskId=? AND incarnation=? AND state IN ('submitted','delivered')",
             t.id,
             incarnation,
           )
@@ -1504,7 +1522,7 @@ export class ControlService {
       return;
     }
     if (path === "/v1/executor/status" && method === "POST") {
-      const d = statusBody.parse(await body(req, 12 * 1024 * 1024));
+      const d = statusBody.parse(await body(req, RESULT_BODY_LIMIT));
       if (terminalStates.includes(d.state as any)) {
         const result = s.complete(
           t.id,
@@ -1660,6 +1678,7 @@ export class ControlService {
         "INTERACTION_STATE",
         "Answer has not been delivered",
       );
+      if (i.state === im[2]) { json(res, { ok: true }); return; }
       s.exec(
         "UPDATE interactions SET state=?,version=version+1 WHERE id=?",
         im[2],
@@ -1679,7 +1698,7 @@ export class ControlService {
           body: z.any(),
         })
         .strict()
-        .parse(await body(req, 12 * 1024 * 1024));
+        .parse(await body(req, RESULT_BODY_LIMIT));
       const raw = JSON.stringify(d.body),
         hash = digest(raw);
       requireValue(

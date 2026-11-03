@@ -49,12 +49,36 @@ export class Store {
       CREATE TABLE IF NOT EXISTS devices(id TEXT PRIMARY KEY,codeHash TEXT NOT NULL UNIQUE,pollHash TEXT NOT NULL,ownerId TEXT,state TEXT NOT NULL,expiresAt INTEGER NOT NULL);
       INSERT OR IGNORE INTO meta(key,value) VALUES ('schemaVersion','1');
     `);
+    const version = this.one<any>("SELECT value FROM meta WHERE key=?", "schemaVersion")?.value;
     requireValue(
-      this.one<any>("SELECT value FROM meta WHERE key=?", "schemaVersion")
-        ?.value === "1",
+      version === "1" || version === "2",
       "SCHEMA_VERSION",
       "Unsupported database schema",
     );
+    if (version === "1") this.tx(() => {
+      this.db.exec(`
+        ALTER TABLE tasks ADD COLUMN recoveryRequired INTEGER NOT NULL DEFAULT 0;
+        ALTER TABLE tasks ADD COLUMN recoveryRunId TEXT;
+        ALTER TABLE tasks ADD COLUMN recoveryReason TEXT;
+        ALTER TABLE tasks ADD COLUMN restoreId TEXT;
+        UPDATE tasks SET recoveryRunId=(
+          SELECT r.id FROM runs r WHERE r.taskId=tasks.id AND r.state IN ('uncertain','interrupted')
+          AND NOT EXISTS (SELECT 1 FROM runs later WHERE later.taskId=r.taskId AND later.kind='recovery' AND later.ordinal>r.ordinal)
+          ORDER BY r.ordinal DESC LIMIT 1
+        );
+        UPDATE tasks SET recoveryRequired=1,paused=1,
+          recoveryReason=(SELECT state FROM runs WHERE id=recoveryRunId)
+          WHERE recoveryRunId IS NOT NULL;
+        UPDATE tasks SET restoreId=(SELECT json_extract(payload,'$.restoreId') FROM events WHERE taskId=tasks.id AND kind='database.reconciled' ORDER BY taskSeq DESC LIMIT 1);
+        UPDATE tasks SET recoveryRequired=1,paused=1,recoveryReason='database_restore',
+          recoveryRunId=COALESCE(recoveryRunId,(SELECT id FROM runs WHERE taskId=tasks.id ORDER BY COALESCE(startedAt,0) DESC,ordinal DESC LIMIT 1))
+          WHERE restoreId IS NOT NULL AND NOT EXISTS (
+            SELECT 1 FROM events WHERE taskId=tasks.id AND kind='input.saved' AND json_extract(payload,'$.kind')='recovery'
+            AND taskSeq>(SELECT MAX(taskSeq) FROM events WHERE taskId=tasks.id AND kind='database.reconciled')
+          );
+        UPDATE meta SET value='2' WHERE key='schemaVersion';
+      `);
+    });
   }
   one<T>(sql: string, ...params: any[]): T | undefined {
     return this.db.prepare(sql).get(...params) as T | undefined;
@@ -184,6 +208,15 @@ export class Store {
     );
     return t;
   }
+  requireRecovery(taskId: string, runId: string | null, reason: string) {
+    // Keep the original unresolved barrier even if a later queued Run is cancelled.
+    this.exec(`UPDATE tasks SET paused=1,recoveryRequired=1,
+      recoveryRunId=CASE WHEN recoveryRequired=1 THEN recoveryRunId ELSE ? END,
+      recoveryReason=CASE WHEN recoveryRequired=1 THEN recoveryReason ELSE ? END WHERE id=?`, runId, reason, taskId);
+  }
+  assertRecovered(taskId: string) {
+    requireValue(!this.task(taskId).recoveryRequired, "RECOVERY_REQUIRED", "Inspect the original Run and submit an explicit recovery input");
+  }
   mint(kind: string, subject: string, scope: unknown = null, ttl = 86400000) {
     const token = secret();
     this.exec(
@@ -291,6 +324,7 @@ export class Store {
       "TASK_CLOSED",
       "Reopen the task before submitting input",
     );
+    this.assertRecovered(taskId);
     const n = this.one<any>(
       "SELECT COALESCE(MAX(ordinal),0)+1 AS n FROM runs WHERE taskId=?",
       taskId,
@@ -403,7 +437,7 @@ export class Store {
         return { run, cancelled: run.state === "cancelling" };
       }
       if (
-        t.paused ||
+        t.paused || t.recoveryRequired ||
         t.lifecycle !== "open" ||
         this.one(
           "SELECT id FROM operations WHERE taskId=? AND kind IN (?,?) AND state IN (?,?)",
@@ -579,6 +613,7 @@ export class Store {
         "UPDATE interactions SET state='expired',version=version+1 WHERE taskId=? AND state IN ('pending','submitted')",
         taskId,
       );
+      if (["uncertain", "interrupted"].includes(state)) this.requireRecovery(taskId, runId, state);
       this.event(taskId, `run.${state}`, result, runId);
       return { ok: true };
     });

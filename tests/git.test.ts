@@ -248,3 +248,44 @@ test("file preview rejects traversal and symlinks outside the workspace or into 
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test("interrupted first checkout reaches its selected commit and preserves initialized or dirty workspaces", async () => {
+  const root = await mkdtemp(resolve(tmpdir(), "dsh-cloud-init-"));
+  try {
+    const seed = resolve(root, "seed"), trusted = resolve(root, "trusted.git"), workspace = resolve(root, "workspace");
+    await processRun("git", ["init", "-b", "main", seed]);
+    await writeFile(resolve(seed, "note.txt"), "main\n");
+    const commit = async (message: string) => {
+      await git(["-C", seed, "add", "."]);
+      await git(["-C", seed, "-c", "user.name=Fixture", "-c", "user.email=fixture@localhost", "commit", "-m", message]);
+    };
+    await commit("main");
+    await git(["-C", seed, "checkout", "-b", "feature"]);
+    await writeFile(resolve(seed, "note.txt"), "feature\n"); await commit("feature");
+    const selected = (await git(["-C", seed, "rev-parse", "HEAD"])).stdout.trim();
+    await git(["-C", seed, "checkout", "main"]);
+    await processRun("git", ["clone", "--bare", seed, trusted]);
+    // Exactly the crash window reported: clone is complete, no checkout or marker exists.
+    await processRun("git", ["clone", trusted, workspace]);
+    const task = { id: id(), repo: "https://github.com/test/fixture.git", ref: "feature", branch: "dsh/task/test", baseCommit: null } as Task;
+    assert.equal(await prepareRepository(task, workspace, trusted), selected);
+    assert.equal((await git(["-C", workspace, "rev-parse", "HEAD"])).stdout.trim(), selected);
+    assert.equal((await git(["-C", workspace, "branch", "--show-current"])).stdout.trim(), task.branch);
+    assert.equal((await git(["-C", workspace, "remote", "get-url", "origin"])).stdout.trim(), task.repo);
+    // A crash after checkout but before its completed marker is also retryable.
+    const marker = resolve(trusted, "dsh-workspace.json"), saved = JSON.parse(await readFile(marker, "utf8"));
+    await writeFile(marker, JSON.stringify({ ...saved, complete: false }));
+    assert.equal(await prepareRepository(task, workspace, trusted), selected);
+    await writeFile(resolve(workspace, "note.txt"), "user changes must survive\n");
+    task.baseCommit = selected;
+    assert.equal(await prepareRepository(task, workspace, trusted), selected);
+    assert.equal(await readFile(resolve(workspace, "note.txt"), "utf8"), "user changes must survive\n");
+    // Legacy already-provisioned workspaces have no marker. Do not reset those either.
+    await rm(marker);
+    assert.equal(await prepareRepository(task, workspace, trusted), selected);
+    assert.equal(await readFile(resolve(workspace, "note.txt"), "utf8"), "user changes must survive\n");
+    task.baseCommit = null;
+    await assert.rejects(prepareRepository(task, workspace, trusted), (err: any) => err.code === "WORKSPACE_INIT_INCOMPLETE");
+    assert.equal(await readFile(resolve(workspace, "note.txt"), "utf8"), "user changes must survive\n");
+  } finally { await rm(root, { recursive: true, force: true }); }
+});

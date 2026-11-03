@@ -1,3 +1,4 @@
+import { subscribeTask } from "./subscription.ts";
 import React, {
   useCallback,
   useEffect,
@@ -700,61 +701,25 @@ function TaskDetail({
     if (s.task.lifecycle === "deleted") onDeleted();
   }, [taskId, transport]);
   useEffect(() => {
-    let stopped = false,
-      unwatch = () => {},
-      cursor = 0;
-    void (async () => {
-      try {
-        const s = await transport.request(`/v1/tasks/${taskId}`);
-        if (stopped) return;
-        setSnap(s);
-        cursor = s.snapshotSeq;
-        let after = -1,
-          events: any[] = [];
-        while (true) {
-          const batch = await transport.request(
-            `/v1/tasks/${taskId}/history?after=${after}`,
-          );
-          if (!batch.events.length) break;
-          events.push(...batch.events);
-          after = batch.events.at(-1).seq;
-          if (after >= batch.durableSeq) break;
-        }
-        if (stopped) return;
-        setNative(events);
-        unwatch = transport.watch(
-          taskId,
-          cursor,
-          (event) => {
-            if (event.taskSeq <= cursor) return;
-            if (event.taskSeq !== cursor + 1) {
-              setError("事件序号存在缺口，请重新打开任务。");
-              return;
-            }
-            cursor = event.taskSeq;
-            if (event.kind === "session.event")
-              setNative((old) => {
-                const map = new Map(old.map((x) => [x.seq, x]));
-                map.set(event.payload.seq, event.payload);
-                return [...map.values()].sort((a, b) => a.seq - b.seq);
-              });
-            else void refresh().catch((e) => setError(e.message));
-          },
-          setConnected,
-        );
-      } catch (e: any) {
-        setError(e.message);
-      }
-    })();
-    const timer = setInterval(
-      () => void refresh().catch(() => setConnected(false)),
-      4000,
-    );
-    return () => {
-      stopped = true;
-      clearInterval(timer);
-      unwatch();
+    let stopped = false;
+    setConnected(false); setSnap(undefined); setNative([]); setError("");
+    const update = async () => {
+      const snapshot = await transport.request(`/v1/tasks/${taskId}`);
+      if (!stopped) { setSnap(snapshot); if (snapshot.task.lifecycle === "deleted") onDeleted(); }
     };
+    const unwatch = subscribeTask(transport, taskId, {
+      snapshot: setSnap, history: setNative, status: setConnected, error: setError,
+      event: event => {
+        if (event.kind === "session.event") setNative(old => {
+          const map = new Map(old.map(x => [x.seq, x]));
+          map.set(event.payload.seq, event.payload);
+          return [...map.values()].sort((a, b) => a.seq - b.seq);
+        });
+        else void update().catch(e => { if (!stopped) setError(e.message); });
+      },
+    });
+    const timer = setInterval(() => void update().catch(() => { if (!stopped) setConnected(false); }), 4000);
+    return () => { stopped = true; clearInterval(timer); unwatch(); };
   }, [taskId, transport, refresh]);
   const act = async (path: string, body: unknown = {}, key?: string) => {
     setError("");
@@ -782,7 +747,7 @@ function TaskDetail({
     offline =
       Date.now() - snap.runner.lastSeenAt > 30000 || !!snap.runner.revoked,
     last = snap.runs.at(-1),
-    prior = [...snap.runs]
+    prior = snap.runs.find((r: any) => r.id === t.recoveryRunId) ?? [...snap.runs]
       .reverse()
       .find((r: any) => terminal.includes(r.state)),
     resultRun = [...snap.runs]
@@ -864,9 +829,7 @@ function TaskDetail({
             : "检查上一次运行和工作区，再选择恢复方式。"}
           <div className="row" style={{ marginTop: 8 }}>
             {prior &&
-              ["uncertain", "interrupted", "failed", "cancelled"].includes(
-                prior.state,
-              ) && (
+              (t.recoveryRequired || ["uncertain", "interrupted", "failed", "cancelled"].includes(prior.state)) && (
                 <button
                   disabled={
                     t.environmentState === "needs_stop" || !!t.currentRunId
@@ -879,7 +842,7 @@ function TaskDetail({
                   编写恢复输入
                 </button>
               )}
-            {!prior || !["uncertain", "interrupted"].includes(prior.state) ? (
+            {!t.recoveryRequired && (!prior || !["uncertain", "interrupted"].includes(prior.state)) ? (
               <button
                 onClick={() =>
                   void act(`/v1/tasks/${taskId}/queue/resume`).catch(() => {})
@@ -941,7 +904,7 @@ function TaskDetail({
                 <div className="notice small">
                   恢复 Run #{prior?.ordinal}
                   。先核对可能已发生的文件或外部操作。提交后会取消旧的排队输入，请把仍需执行的工作写进本次输入。
-                  {prior?.state === "uncertain" && (
+                  {(prior?.state === "uncertain" || t.recoveryReason === "database_restore") && (
                     <label className="check">
                       <input
                         type="checkbox"
@@ -978,7 +941,7 @@ function TaskDetail({
                   disabled={
                     busy ||
                     (!recovery && !!t.paused) ||
-                    (recovery && prior?.state === "uncertain" && !ack)
+                    (recovery && (prior?.state === "uncertain" || t.recoveryReason === "database_restore") && !ack)
                   }
                 >
                   {busy ? "保存中…" : recovery ? "提交恢复输入" : "发送追问"}
@@ -1055,6 +1018,7 @@ function TaskDetail({
                 </p>
                 <div className="divider" />
                 <h3>检查结果</h3>
+                {(resultRun.result.truncation || resultRun.result.artifactTruncation) && <p className="notice">较大输出已截断；完整结果保留在原执行节点的持久卷中。</p>}
                 {resultRun.result.checks?.length ? (
                   resultRun.result.checks.map((c: any, index: number) => (
                     <details key={index}>

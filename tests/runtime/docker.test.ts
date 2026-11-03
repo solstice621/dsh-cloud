@@ -67,7 +67,7 @@ test(
     const template = TemplateSchema.parse({
       id: "docker",
       version: "1",
-      image: "dsh-cloud-runtime:0.1.1",
+      image: "dsh-cloud-runtime:0.1.3",
       platforms: ["linux/arm64", "linux/amd64"],
       checks: [
         {
@@ -221,6 +221,13 @@ test(
       await service.close();
       service = new ControlService(savedConfig);
       await service.listen();
+      let lostDeliveryReceipt = false;
+      service.server.prependListener("request", (req, res) => {
+        if (req.url?.endsWith("/delivered") && !lostDeliveryReceipt) {
+          // Destroy the real HTTP response only after the handler committed delivery.
+          res.end = (() => { lostDeliveryReceipt = true; res.destroy(); return res; }) as typeof res.end;
+        }
+      });
       const question = service.store.one<any>(
         "SELECT * FROM interactions WHERE runId=? AND state='pending'",
         waiting.runId,
@@ -237,6 +244,8 @@ test(
           )?.state === "succeeded",
         "answer delivered",
       );
+      assert.equal(lostDeliveryReceipt, true);
+      assert.equal(service.store.all("SELECT * FROM events WHERE taskId=? AND kind='interaction.delivered'", taskId).length, 1);
       await user(`/v1/tasks/${taskId}/environment/stop`, {});
       await waitFor(
         () => service.store.task(taskId).environmentState === "stopped",
@@ -389,6 +398,7 @@ test(
           epoch: finalTask.epoch,
           durableSeq: finalTask.durableSeq,
           forcedCrashRecovery: true,
+          lostDeliveryReceiptRecovered: true,
           modelCalls,
           cancellationMs,
         }),

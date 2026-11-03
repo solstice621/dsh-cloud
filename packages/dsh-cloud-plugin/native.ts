@@ -12,7 +12,7 @@ import { digest, TaskInputSchema } from "../contracts/index.ts";
 
 type Request = <T = any>(path: string, body?: unknown, key?: string) => Promise<T>;
 type Draft = { sessionId: string; createdAt: number; config: any };
-type Entry = { task?: any; draft?: Draft; snapshot?: any; events: any[]; header?: any; loading?: Promise<void>; loadedAt?: number };
+type Entry = { task?: any; draft?: Draft; snapshot?: any; events: any[]; header?: any; historyLoaded?: boolean; loading?: Promise<void>; loadedAt?: number };
 const activeStates = new Set(["queued", "preparing", "running", "waiting_input", "finalizing", "cancelling"]);
 const fail = (message: string): never => { throw new RemoteError("gateway/bad-request", message, {}); };
 const pause = (signal: AbortSignal, ms = 700) => sleep(ms, undefined, { signal }).catch(() => {});
@@ -35,6 +35,8 @@ export class NativeCloudSessions {
   private refreshPromise?: Promise<void>;
   private ready: Promise<void>;
   private lastList = 0;
+  private lastInfo = 0;
+  private generation = 0;
   private disposePatches: (() => void)[] = [];
   private writes = Promise.resolve();
   constructor(readonly ctx: Context, readonly request: Request, readonly file: string) {
@@ -58,15 +60,21 @@ export class NativeCloudSessions {
   async owns(id: string) { await this.ready; if (this.known.has(id)) return true; await this.refresh().catch(() => {}); return this.known.has(id); }
   async refresh(force = false) {
     await this.ready;
-    if (!force && Date.now() - this.lastList < 700) return;
+    if (!force && Date.now() - this.lastList < 3000) return;
+    const generation = this.generation;
     return this.refreshPromise ??= (async () => {
       const tasks = await this.request<any[]>("/v1/tasks");
-      const info = await this.request<any>("/v1/info");
-      const modelName = typeof info.model === "string" ? info.model : info.model?.name ?? "";
-      if (modelName !== this.modelName) {
-        this.modelName = modelName;
-        (this.ctx.emit as any)("llm/adapters-updated");
+      if (Date.now() - this.lastInfo >= 60000) {
+        const info = await this.request<any>("/v1/info");
+        if (generation !== this.generation || this.abort.signal.aborted) return;
+        const modelName = typeof info.model === "string" ? info.model : info.model?.name ?? "";
+        if (modelName !== this.modelName) {
+          this.modelName = modelName;
+          (this.ctx.emit as any)("llm/adapters-updated");
+        }
+        this.lastInfo = Date.now();
       }
+      if (generation !== this.generation || this.abort.signal.aborted) return;
       this.lastList = Date.now();
       let changed = false;
       const visible = new Set<string>();
@@ -92,19 +100,29 @@ export class NativeCloudSessions {
     const e = this.entries.get(id);
     if (!e) fail("云端会话暂不可用，请在设置中检查登录和连接。");
     if (e!.draft) return e!;
-    if (!force && e!.loadedAt && Date.now() - e!.loadedAt < 400) return e!;
+    const unchanged = e!.snapshot?.task.version === e!.task.version && e!.snapshot?.task.durableSeq === e!.task.durableSeq;
+    if (!force && e!.loadedAt && (Date.now() - e!.loadedAt < 2000 || unchanged)) {
+      this.presentInteractions(id, e!);
+      return e!;
+    }
+    const generation = this.generation;
     await (e!.loading ??= (async () => {
-      e!.snapshot = await this.request(`/v1/tasks/${e!.task.id}`);
+      const snapshot = await this.request(`/v1/tasks/${e!.task.id}`);
+      if (generation !== this.generation || this.abort.signal.aborted) return;
+      e!.snapshot = snapshot;
       e!.task = e!.snapshot.task;
-      do {
+      while (!e!.historyLoaded || (e!.events.at(-1)?.seq ?? -1) < e!.task.durableSeq) {
         const h = await this.request(`/v1/tasks/${e!.task.id}/history?after=${e!.events.at(-1)?.seq ?? -1}`);
+        if (generation !== this.generation || this.abort.signal.aborted) return;
         if (h.header) e!.header = h.header;
+        e!.historyLoaded = true;
         for (const event of h.events) {
           if (event.seq !== e!.events.length) fail("云端原生日志不连续，已停止同步。");
           e!.events.push(event);
         }
         if (!h.events.length || e!.events.length > h.durableSeq) break;
-      } while (!this.abort.signal.aborted);
+        if (this.abort.signal.aborted) break;
+      }
       e!.loadedAt = Date.now();
       this.presentInteractions(id, e!);
     })().finally(() => { e!.loading = undefined; }));
@@ -140,9 +158,11 @@ export class NativeCloudSessions {
     return { defaults: this.defaults, sessions: [...this.entries].map(([sessionId, e]) => ({ sessionId, taskId: e.task?.id, draft: !!e.draft, title: e.task?.title, runnerId: e.task?.runnerId ?? e.draft?.config.runnerId, runnerName: e.task?.runnerName, paused: !!e.task?.paused, environmentState: e.task?.environmentState, lifecycle: e.task?.lifecycle })) };
   }
   signOut() {
+    this.generation++;
     for (const abort of this.pending.values()) abort.abort();
+    this.pending.clear();
     for (const id of this.entries.keys()) (this.ctx.emit as any)("api-session/removed", id);
-    this.entries.clear(); this.recovery.clear(); this.inspections.clear(); this.lastList = 0;
+    this.entries.clear(); this.recovery.clear(); this.inspections.clear(); this.lastList = 0; this.lastInfo = 0;
   }
   async invoke(action: string, data: any = {}) {
     await this.ready;
@@ -162,9 +182,9 @@ export class NativeCloudSessions {
       const e = await this.load(data.sessionId, true);
       if (!e.task) fail("云端会话尚未开始。");
       if (e.task.currentRunId || e.task.environmentState === "needs_stop") fail("等待原执行停止后再恢复。");
-      const prior = [...e.snapshot.runs].reverse().find((r: any) => ["interrupted", "uncertain", "cancelled", "failed"].includes(r.state));
+      const prior = e.snapshot.runs.find((r: any) => r.id === e.task.recoveryRunId) ?? [...e.snapshot.runs].reverse().find((r: any) => ["interrupted", "uncertain", "cancelled", "failed"].includes(r.state));
       if (!prior || prior.id !== data.previousRunId) fail("请重新检查待恢复的执行记录。");
-      if (prior.state === "uncertain" && !data.acknowledgeUncertain) fail("请先确认外部操作结果可能不确定。");
+      if ((prior.state === "uncertain" || e.task.recoveryReason === "database_restore") && !data.acknowledgeUncertain) fail("请先确认外部操作结果可能不确定。");
       this.recovery.set(data.sessionId, { previousRunId: prior.id, acknowledgeUncertain: !!data.acknowledgeUncertain });
       return { armed: true };
     }
@@ -333,12 +353,12 @@ export class NativeCloudSessions {
     let cursor = page.cursor;
     yield { type: "snapshot", header: this.header(id, e), ...page, projections: this.projection(id, e), ...(request.assistantStream ? { assistantStream: { revision: 0 } } : {}) };
     while (!signal.aborted && !this.abort.signal.aborted) {
-      await pause(signal);
+      await pause(signal, 2000);
       if (signal.aborted) return;
       // A control-service outage does not tear down the local DSH connection.
       // Retain the cursor and retry; never reconstruct or replay a prompt.
       let latest: Entry;
-      try { latest = await this.load(id, true); } catch { continue; }
+      try { latest = await this.load(id); } catch { continue; }
       for (const event of this.wireEvents(latest).filter(v => v.seq > cursor)) { yield { type: "event", event }; cursor = event.seq; }
     }
   }
@@ -359,9 +379,8 @@ export class NativeCloudSessions {
           } else yield frame;
           next = iterator.next().then(value => ({ value }));
         } else {
-          await this.refresh().catch(() => {});
+          await this.pollActive();
           for (const [id, e] of this.entries) {
-            if (e.snapshot || e.task?.currentRunId) await this.load(id).catch(() => {});
             const p = this.projection(id, e);
             for (const [key, value] of Object.entries(p.values)) {
               const index = id + ":" + key, hash = digest(value);
@@ -372,6 +391,13 @@ export class NativeCloudSessions {
         }
       }
     } finally { void iterator.return?.(); }
+  }
+  private async pollActive() {
+    await this.refresh().catch(() => {});
+    for (const [id, e] of this.entries) {
+      if (e.task?.currentRunId || (e.snapshot && (e.snapshot.task.version !== e.task?.version || e.snapshot.task.durableSeq !== e.task?.durableSeq)))
+        await this.load(id).catch(() => {});
+    }
   }
   private presentInteractions(id: string, e: Entry) {
     const live = new Set((e.snapshot?.interactions ?? []).filter((i: any) => i.state === "pending").map((i: any) => i.id));

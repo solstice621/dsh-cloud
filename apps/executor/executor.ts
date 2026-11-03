@@ -12,6 +12,9 @@ import {
   type Run,
 } from "../../packages/contracts/index.ts";
 import { api, delay } from "../../packages/contracts/http.ts";
+import { replayOutbox } from "../../packages/contracts/outbox.ts";
+import { boundResultPayload } from "../../packages/contracts/results.ts";
+import { durableWrite } from "../../packages/contracts/storage.ts";
 import { processRun } from "../../packages/contracts/process.ts";
 import { snapshot } from "../../packages/git-provider/index.ts";
 import { Journal } from "./journal.ts";
@@ -61,12 +64,14 @@ export class Executor {
       dshVersion: DSH_VERSION,
       journalRunId: prior?.runId ?? null,
       phase: prior?.phase ?? "idle",
+      restoreId: this.journal.value("restoreId", null),
     });
     requireValue(
       !hello.reconcileRequired,
       "RECONCILE_REQUIRED",
       "Control history and Executor journal need reconciliation",
     );
+    this.journal.set("restoreId", hello.task.restoreId ?? null);
     if (prior) {
       // A replaced process cannot know the external effects of a dispatched input.
       // Preserve the evidence and require an explicit recovery Run.
@@ -160,21 +165,27 @@ export class Executor {
         }
         await this.sync();
         const data = await this.call("/v1/executor/commands");
-        for (const answer of data.answers) {
-          const pending = this.pending.get(answer.id);
-          if (pending) {
-            await this.call(
-              `/v1/executor/interactions/${answer.id}/delivered`,
-              {},
-            );
-            this.pending.delete(answer.id);
-            pending.resolve(answer.answer);
-            this.journal.set(`delivered:${answer.id}`, this.run?.id ?? null);
-          }
-        }
         if (data.current?.cancelled) {
           await this.stop("cancel_requested");
           break;
+        }
+        for (const answer of data.answers) {
+          const pending = this.pending.get(answer.id);
+          if (pending) {
+            this.journal.receiveAnswer({ ...answer, runId: answer.runId ?? this.run!.id });
+            const saved = this.journal.get<any>("SELECT * FROM answers WHERE id=?", answer.id)!;
+            if (saved.consumed) continue;
+            // No network await between local consumption and queuing its receipt.
+            // A process crash fences this incarnation and requires explicit recovery;
+            // a lost HTTP receipt cannot leave a live DSH waiter stranded.
+            this.pending.delete(answer.id);
+            pending.resolve(JSON.parse(saved.answer));
+            this.journal.tx(() => {
+              this.journal.run("UPDATE answers SET consumed=1 WHERE id=?", answer.id);
+              this.journal.set(`delivered:${answer.id}`, saved.runId);
+              this.journal.queue(`/v1/executor/interactions/${answer.id}/delivered`, {}, `delivered:${answer.id}`);
+            });
+          }
         }
         if (data.current?.run && !this.runPromise) {
           const run = data.current.run as Run,
@@ -214,7 +225,7 @@ export class Executor {
       } catch (error) {
         if (
           error instanceof CloudError &&
-          ["STALE_EXECUTOR", "RUNNER_REVOKED", "UNAUTHORIZED"].includes(
+          ["STALE_EXECUTOR", "RUNNER_REVOKED", "UNAUTHORIZED", "DELIVERY_REJECTED"].includes(
             error.code,
           )
         ) {
@@ -281,35 +292,7 @@ export class Executor {
         ack = result.durableSeq;
         this.journal.set("ackedSeq", ack);
       }
-      for (const item of this.journal.all<any>(
-        "SELECT * FROM outbox ORDER BY id LIMIT 100",
-      )) {
-        try {
-          await this.call(item.path, JSON.parse(item.body));
-          this.journal.run("DELETE FROM outbox WHERE id=?", item.id);
-        } catch (error) {
-          if (
-            error instanceof CloudError &&
-            [
-              "RESULT_CONFLICT",
-              "RUN_NOT_CURRENT",
-              "CANCEL_PENDING",
-              "INTERACTION_STALE",
-              "INTERACTION_STATE",
-            ].includes(error.code)
-          ) {
-            this.journal.rejectOutbox(item, error.code);
-            console.error(
-              JSON.stringify({
-                level: "warn",
-                taskId: this.config.task.id,
-                event: "outbox.reconciliation",
-                code: error.code,
-              }),
-            );
-          } else throw error;
-        }
-      }
+      await replayOutbox(this.journal, this.call.bind(this), this.config.task.restoreId ?? null);
     })().finally(() => {
       this.syncing = undefined;
     }));
@@ -487,16 +470,17 @@ export class Executor {
           )!.n,
           artifactId,
         };
+      const artifact = { id: artifactId, runId: run.id, revision: snap.workspaceRevision, kind: "result", body: { ...snap, checks } };
+      const state = finishReason === "completed" ? "succeeded" : "failed";
+      const fullStatus = { runId: run.id, state, result };
+      const localFile = `results/${run.id}.json`;
+      await durableWrite(resolve(c.stateDir, localFile), JSON.stringify({ artifact, status: fullStatus }), true);
+      const boundedArtifact = boundResultPayload(artifact, localFile);
+      const artifactTruncation = (boundedArtifact.body as any).truncation;
+      const boundedStatus = boundResultPayload({ ...fullStatus, result: { ...result, ...(artifactTruncation ? { artifactTruncation } : {}) } }, localFile);
       this.journal.tx(() => {
         this.journal.queue(
-          "/v1/executor/artifacts",
-          {
-            id: artifactId,
-            runId: run.id,
-            revision: snap.workspaceRevision,
-            kind: "result",
-            body: { ...snap, checks },
-          },
+          "/v1/executor/artifacts", boundedArtifact,
           `artifact:${run.commandId}`,
         );
         for (const item of this.journal.all<any>(
@@ -508,15 +492,14 @@ export class Executor {
               {},
               `answer:${item.key}`,
             );
-        const state = finishReason === "completed" ? "succeeded" : "failed";
         this.journal.queue(
           "/v1/executor/status",
-          { runId: run.id, state, result },
+          boundedStatus,
           `complete:${run.commandId}`,
         );
         this.journal.run(
           "UPDATE commands SET phase='complete',result=? WHERE id=?",
-          JSON.stringify(result),
+          JSON.stringify(boundedStatus.result),
           run.commandId,
         );
       });

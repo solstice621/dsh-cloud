@@ -7,6 +7,7 @@ import {
   id,
   secret,
   requireValue,
+  CloudError,
 } from "../../packages/contracts/index.ts";
 import { Store } from "./db.ts";
 import type { ControlConfig } from "./config.ts";
@@ -14,18 +15,36 @@ import { body, cookie, json, RateLimit } from "./http.ts";
 
 export class Auth {
   private oidcConfig?: Promise<oidc.Configuration>;
+  private retryAt = 0;
+  private discoveryFailures = 0;
   readonly limits = new RateLimit();
   constructor(
     readonly store: Store,
     readonly config: ControlConfig,
   ) {}
-  private client() {
+  private discover() {
     const c = this.config.oidc!;
-    return (this.oidcConfig ??= oidc.discovery(
+    return oidc.discovery(
       new URL(c.issuer),
       c.clientId,
       c.clientSecret,
-    ));
+    );
+  }
+  private client() {
+    if (this.oidcConfig) return this.oidcConfig;
+    if (Date.now() < this.retryAt)
+      return Promise.reject(new CloudError(503, "OIDC_UNAVAILABLE", "Identity provider is temporarily unavailable; retry shortly"));
+    const pending = this.discover().then(config => {
+      this.discoveryFailures = 0;
+      this.retryAt = 0;
+      return config;
+    }).catch(error => {
+      if (this.oidcConfig === pending) this.oidcConfig = undefined;
+      this.retryAt = Date.now() + Math.min(30000, 1000 * 2 ** this.discoveryFailures++);
+      throw error;
+    });
+    this.oidcConfig = pending;
+    return pending;
   }
   sessionCookie(token: string, maxAge = 86400) {
     return `dsh_cloud=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${maxAge}${this.config.publicUrl.startsWith("https:") ? "; Secure" : ""}`;
