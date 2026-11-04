@@ -1630,7 +1630,8 @@ export class ControlService {
         );
         if (old) {
           requireValue(
-            digest(JSON.parse(old.body)) === digest(d.body),
+            old.runId === d.runId && old.kind === d.kind &&
+              digest(JSON.parse(old.body)) === digest(d.body),
             "INTERACTION_CONFLICT",
             "Interaction changed",
           );

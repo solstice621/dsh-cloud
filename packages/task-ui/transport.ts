@@ -64,6 +64,8 @@ export function pollingWatch(
 ): Transport["watch"] {
   return (taskId, after, onEvent, onStatus) => {
     let stopped = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let wake: (() => void) | undefined;
     const run = async () => {
       while (!stopped) {
         try {
@@ -72,22 +74,33 @@ export function pollingWatch(
           );
           if (stopped) break;
           for (const event of result.events) {
+            if (stopped) break;
             if (event.taskSeq <= after) continue;
             if (event.taskSeq !== after + 1)
               throw new Error("Event sequence gap; reload the task");
             onEvent(event);
             after = event.taskSeq;
           }
-          onStatus(true);
+          if (!stopped) onStatus(true);
         } catch {
-          onStatus(false);
+          if (!stopped) onStatus(false);
         }
-        await new Promise((r) => setTimeout(r, 800));
+        if (stopped) break;
+        await new Promise<void>((resolve) => {
+          wake = () => {
+            clearTimeout(timer);
+            timer = undefined;
+            wake = undefined;
+            resolve();
+          };
+          timer = setTimeout(wake, 800);
+        });
       }
     };
     void run();
     return () => {
       stopped = true;
+      wake?.();
     };
   };
 }

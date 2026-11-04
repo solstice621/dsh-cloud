@@ -1,0 +1,178 @@
+{
+  "recordedAt": "2026-11-04T06:49:46.555873+00:00",
+  "baselineCommit": "ca4c3727b77b020985c0a110b45d4ac70c46bf3d",
+  "version": "0.1.3",
+  "node": "24.19.0",
+  "npm": "11.17.0",
+  "dshSdk": "0.2.2-alpha.2",
+  "localPlatform": "macOS arm64 with Docker Desktop Linux arm64",
+  "checks": {
+    "typecheck": "passed",
+    "build": "passed",
+    "diffCheck": "passed",
+    "core": {
+      "passed": 115,
+      "failed": 0,
+      "skipped": 0,
+      "baseline": 43,
+      "added": 72
+    },
+    "sdk": {
+      "status": "passed",
+      "realRuntime": true,
+      "durableSeq": 64,
+      "questions": 1,
+      "approvals": 1,
+      "modelCalls": 7
+    },
+    "docker": {
+      "status": "passed",
+      "docker": true,
+      "runnerOS": "darwin",
+      "epoch": 4,
+      "durableSeq": 102,
+      "forcedCrashRecovery": true,
+      "lostDeliveryReceiptRecovered": true,
+      "modelCalls": 12,
+      "cancellationMs": 263
+    },
+    "standardDockerfileBuild": {
+      "status": "blocked",
+      "reason": "Configured Docker registry mirror returned EOF while fetching the pinned Node base manifest."
+    },
+    "cachedBaseDockerBuild": {
+      "status": "passed",
+      "baseImageId": "sha256:6b2dfbecbb34758c66ca4e41e5cb8cb851e290d8773679ac8d14de9ffc427d66",
+      "testedImageId": "sha256:e47bfe139b69784705a5645169d2ca863bca781e9b64fb99af59e3688284ab6b",
+      "nodeAndDirectProductionDependenciesMatch": true
+    },
+    "githubActionsAtLocalValidation": {
+      "status": "not-run",
+      "reason": "Workflow prepared; remote run will be recorded after push."
+    }
+  },
+  "coverage": {
+    "engine": "Node built-in V8",
+    "scope": "Only apps/packages modules loaded by core tests; excludes unimported entrypoints and full React views. SDK subprocess and Docker coverage are not merged.",
+    "linePercent": 86.81,
+    "branchPercent": 84.14,
+    "functionPercent": 79.56,
+    "minimum": {
+      "linePercent": 85,
+      "branchPercent": 80,
+      "functionPercent": 75
+    },
+    "baselineLoadedModules": {
+      "linePercent": 75.95,
+      "branchPercent": 79.16,
+      "functionPercent": 72.15
+    },
+    "baselineScopeNote": "Same inclusion patterns; new transport tests load an additional module. Aggregate percentages are not a fixed whole-repository denominator.",
+    "priorityModulesLinePercent": {
+      "runner": {
+        "before": 41.71,
+        "after": 87.09
+      },
+      "executor": {
+        "before": 46.83,
+        "after": 83.74
+      },
+      "journal": 100,
+      "clientPolling": 100,
+      "taskSubscription": 100
+    }
+  },
+  "bugsFoundAndFixed": [
+    "Interaction idempotency now compares Run and kind as well as body.",
+    "Stopped polling suppresses late failure/event/status callbacks and cancels its wait timer."
+  ],
+  "limits": [
+    "No new installation or UI walkthrough in the user desktop profile.",
+    "Local Docker test reuses a version-checked cached base; standard fresh build was blocked by registry mirror.",
+    "No live upstream model, public OIDC/TLS, external GitHub PR, independent physical Linux host, long-duration stress or cross-node migration acceptance.",
+    "Core Runner/Executor fault tests replace Docker/SDK boundaries; real SDK/Docker suites provide separate runtime evidence."
+  ],
+  "evidenceSha256": {
+    "core-ci.txt": "3eb45327aa906ca33ee685baae9fe07927ecca0334c1d3954f5243ae8575e2db",
+    "docker-runtime.txt": "11b8e088cbda9dfa8fac61fcc297528f31a6c70c513586a6718ce569c7e392ba"
+  },
+  "sourceManifest": {
+    ".github/workflows/tests.yml": "323270365bb01b4d11e068ec1b08f89fc7d2dd61a0c7d83eee69801e0b7f0867",
+    "apps/control/auth.ts": "2f8f4a9a055e9a6543a99ba56dd8f1436ad43852457c84ee75220fcc6d991cfc",
+    "apps/control/config.ts": "5cd1e055e838c1e78f80bfd543b3e946b55226351887303bab0bd73e3a67609e",
+    "apps/control/db.ts": "3ff930f054988fdf98143b19357225ab2de57891a6bff138873f3896fd282054",
+    "apps/control/http.ts": "5fde6e9e179bc01dd68aad4573c34d4f63d5f1891c61acf08c8fa8dd4ad04c38",
+    "apps/control/main.ts": "721008d06b8a79a9911895ce11e839bba92b5ffa9c0f1a338f46817c8cf14b55",
+    "apps/control/recovery.ts": "e1893736f40d9c869cf9c5b45b95b4f90811a1fab04b18e8f94e7f9ebb48b83e",
+    "apps/control/server.ts": "1e87de6a1cce67d29906a962d9292dc722fb1b45075c294a06da8d81cdee5dde",
+    "apps/control/usage.ts": "eb140905fa708c84f17edf9824f1cde32e538e3d53aac886d5c8e7380f1ba27e",
+    "apps/executor/executor.ts": "f1a3e2ae794b2804c59ae5285f05f1865143ee7bb9a1344f9f50fe3f1e3a3ebf",
+    "apps/executor/journal.ts": "ee945e186831942759eaae543ff3658273feb9963adacd13efe88f2e2642aef0",
+    "apps/executor/main.ts": "e7de54863d3180614486c82b1999e564e56ccb685c5260070b5b5f37871f960c",
+    "apps/executor/runtime.ts": "7e94bdd3845dfb9c482268c03a920e30a49ffa0b11a6d9e7c39c519ec8548cbc",
+    "apps/runner/docker.ts": "3306bfbd9d1a703fea30d1f4d018d64d5266cb458508fc3883a68e543c348941",
+    "apps/runner/main.ts": "fea69d6828cfc49508cde1590ef0d2acda738cceed04bfbb4f8320f851ce0093",
+    "apps/runner/runner.ts": "aa5603d71e488baffefcef172b0504acc794bb4d11d2cacbbf4b2fd496e9569c",
+    "apps/web/index.html": "ff71c868ffdaac0ecf5a169e73847b3530531fc2a703442fab11a46268688f45",
+    "apps/web/main.tsx": "5e0b94e483ab96f549937281523c84768debfef5678fc380a732f558524a83f2",
+    "apps/web/style.css": "0e977fa503b2c436e675e62db414a927aa3dd9781837dc7afd3c5dce2969950e",
+    "deploy/runtime-images/Dockerfile": "33104a4b22c1bec56073224f1ad73e25baa82409cb24d937c41427aa408b5c0a",
+    "package-lock.json": "b393871b6f3458a4e193f888c29e3ca3a8f541c91269e36ad422ca35e84c554c",
+    "package.json": "b8abb7510a85f6824ce552d6aeb92f99581f2a2a306ede3c041008d8e7e98909",
+    "packages/contracts/http.ts": "bd54c9549cf2fc1a801f80863fb49325921dbb9a2f24b74759fb31e48d0a2ffb",
+    "packages/contracts/index.ts": "bff3a47ee5b24157572f24cf5989387e7d23a71f462e938d7cb1dbd78b25593b",
+    "packages/contracts/outbox.ts": "99c5866c56bc8af9ed63e400c95178317af87957509afb2bd15350706ac51f68",
+    "packages/contracts/process.ts": "1ef237105e32418a83bfa6e7311085533d4cd51b160f9795569f9945d22938d0",
+    "packages/contracts/results.ts": "515dc30313504bf39e1e50f5cc075f6adfe4aad18aef17fc1c1a4c96532ed545",
+    "packages/contracts/storage.ts": "44d81e771d8158aed473976553fe249aec550ac950655a7dfed63d69e63d84cc",
+    "packages/dsh-cloud-plugin/client.tsx": "9b9f930c5e2144bc9bfcab0118bcc2cd798cedf3b4f46f6768579d168545f62c",
+    "packages/dsh-cloud-plugin/cordis.patch.yml": "cbad32a2cc7e03db3b4468be512a800ea615864049e4aa9aedc5e5f0e708fa7e",
+    "packages/dsh-cloud-plugin/index.ts": "afa2c2b4cd95ef2b19755010ac9b9269c9c2284cac25d91a228af7394d8acf33",
+    "packages/dsh-cloud-plugin/location.tsx": "57c7c976332841c0c0d6897989cbef886b5a21bbf4837a65d8ebcc9710e632b3",
+    "packages/dsh-cloud-plugin/native.ts": "cb683396de7c27ef97ae9c65c2dbe1853f7e14de395d1ca3b06e806acef39db4",
+    "packages/dsh-cloud-plugin/package.json": "2a7179eb0267578a74c18b93ad8f27b9bb05e1b22ff9e132c5a437b6030ac4cc",
+    "packages/dsh-cloud-plugin/polling.ts": "9b48223daa5135f2e672dbaffd9847c47e0806bec9de0bfdf4841f03431c1524",
+    "packages/dsh-cloud-plugin/remote.ts": "0153ba8047f4c46a1ec2757732d104b5253440b6271884d231762881d231183e",
+    "packages/dsh-cloud-runtime/index.ts": "8068a708610242ce12e37293852fbdd942c03e95568541848ceeb3c9ffcb8466",
+    "packages/git-provider/index.ts": "a9c8ca4677b7bb2efd4db416ea33bba3b1a78bd74e1612838446faeaf9f47020",
+    "packages/task-ui/app.tsx": "ebb386fe76ff282eb2510f8e0f84ecb46a0a211ef7d153c5c7586ab8353fbb94",
+    "packages/task-ui/styles.ts": "f694de7392c57c2303a03608cee764cb3369e8acc7a79a6fadecf3a34a4090ad",
+    "packages/task-ui/subscription.ts": "d310ec1e478adabdc35c9795c2310e5a838f44202c8c84735541b7801f66a9cd",
+    "packages/task-ui/transport.ts": "39eeab83b0d2bbdb088946c8055372d59341b8399e4d4bfeac2d16c538c7f9ac",
+    "packages/testing/model-fixture.ts": "6551c6927398572681fe43e3301d1395aee2312d4079cc9ce001bf942ebeea15",
+    "scripts/build.mjs": "a6c92c9148d817a1ed01b0c605a91970de4dfa5e8d4630aef2c499f5044d84be",
+    "scripts/clean.mjs": "593281d3c6367736e5bea81b2175eafaf2b14e0ff5479ebf5c9814e582eaef66",
+    "scripts/demo.ts": "1a699195034894f11db0639c3f4994a464138c73d1d65e94f79419dbcfb2e228",
+    "scripts/doctor.ts": "f3f6f646b20184b6a313bfd6d7e2c10ae20c8a429f3630ddee7cc11d3177e2a6",
+    "scripts/maintenance.ts": "67265dd62fe72d46f2a093fef491db1818d86a6ab8c54948d16273b5a7938719",
+    "scripts/probe-runtime.ts": "09207ba7d9eb7e08d89fce1278685f0535b417ce815a8ec1c272876a3dcf49f9",
+    "scripts/runner-service.sh": "02855632621066c9af2604bc6457e0a2012f8e8b6da671720fc9a1de880e58a1",
+    "scripts/runner-service.ts": "b91f7f1c672cc1084a116357408171d2b91d70aeee4b78a3297aa57b72377417",
+    "scripts/test-coverage.mjs": "a1fc9882e61cc8ccaf93bd73a0e5d5acc550b38538edcdb78c51fad83cdf610c",
+    "scripts/test-linux-runner.ts": "d5bea23212cfc5e4a0627d0bb0c57ce6f894447c8a075cc3c039331241693b22",
+    "scripts/test-live-model.ts": "96c0e0d0f8791b8e1ec9638859eed57465197e28eff0db811365a296f2af9efb",
+    "tests/client-lifecycle.test.ts": "3a6ec731a0fd95b68fcc530e6f921c3ecffc17cbcef7c3355f4729696cc305d6",
+    "tests/client-regressions.test.ts": "4243716bc31a45ccaeb4cb95553b17050af11b44b3ed86121adba11a5fc2b4bb",
+    "tests/control-boundaries.test.ts": "9249f1fc1269661063dce55c58a54b806116f1729a290d2033c5df67031b1ff5",
+    "tests/control.test.ts": "9a8b85ed80bc7121ca0cc2e0a70aca098df87178515686fa832ea823ea727f86",
+    "tests/delivery-regressions.test.ts": "ead2497448c1373e593934e26c7c063637fe94be9735d58da5ab71bd2f35f164",
+    "tests/docker-contract.test.ts": "4347efa6fd8479ae89b6a1c835bcde4e50dbfda93c5f8a60a1913417b322a01b",
+    "tests/durability.test.ts": "99a7ca50ec2e4500f6319367f24ccdaf502fc83c131535d768ccae5e1abee139",
+    "tests/executor-lifecycle.test.ts": "2ac2bb8ebea457d065360b3efde42a920f8777f554fe43848cd449e661633fd8",
+    "tests/git.test.ts": "6463836e2ce3c120fbe11dab75d419dabecc3509d11abdb226bd5e7d4e02f18b",
+    "tests/helpers.ts": "4926a20041913a86e8d4023ef704162821a94fe9ce97211b3caf4a83be353072",
+    "tests/model-fixture.ts": "b527c0abd24192053acd586f71024de87530c7b108c188ce3d6cdd41aaefbe8e",
+    "tests/native-plugin.test.ts": "d85721859dafe2fd1542be4d38c5185fa211afe5c4c9e9309e9aca527dcdddca",
+    "tests/plugin-location.test.ts": "609b3d0fb9a931dcd794c2bb0230178648de1efae7464a0df0fa468da349848b",
+    "tests/recovery-regressions.test.ts": "8437d74a8ceffa04e4ad15a8b66c7b40f7b58b695be3c748d19f82f605851ac4",
+    "tests/reliability.test.ts": "57044b1d8b2bc5e23186de457d5031c1bc705defd5d310abb8eb9f6bdc94691b",
+    "tests/runner-lifecycle.test.ts": "7b5583bb553d3439b9fceb5a90eeedcb1e092fc588d604b15e5c0e27237fa434",
+    "tests/runtime/docker.test.ts": "f10b1e8c27536a6b886d52c5ec72ed36e77a8486773a8497821de52b15c08549",
+    "tests/runtime/sdk.test.ts": "28d20db4a21df7cb652184b71328b4d10311d1cea7cbb4af7e4147c9816dfec3",
+    "tests/test-utils.ts": "5b39766df71495a6a7f14991e19879b804d2a3cf161771f12d4289ca6deff24d",
+    "tests/transport-process.test.ts": "dd79a28366835b01e9320a314b4542647e23ced4b574141b0d0b46b67867ccd4",
+    "tsconfig.build.json": "11a46def93f2bd744c03bc08b18c6a211ea7bbd2f99bc7d7057687728baa72c3",
+    "tsconfig.json": "4792cc890a3905b75dc9e51d22099fd825f672383cb64458fb8e7b746d952469"
+  },
+  "evidenceNormalization": "Trailing whitespace removed from recorded text logs; execution content unchanged."
+}

@@ -107,14 +107,16 @@ Host 提供 `cloud_start`、`cloud_list`、`cloud_get`、`cloud_followup`、`clo
 ## 测试与构建
 
 ```sh
-npm run typecheck
-npm test                         # 控制、恢复、存储、模型转发、真实 Git
-npm run test:runtime              # 真实 DSH SDK；默认跳过 Docker E2E
-CLOUD_DOCKER_TEST=1 npm run test:runtime  # 真实 Docker / Runner / Executor E2E
-npm run build
+npm run test:ci       # 类型检查、构建、115 项回归及覆盖率门槛、真实 DSH SDK
+npm test             # 只运行快速回归套件
+npm run test:coverage # 回归 + LCOV；行/分支/函数门槛为 85% / 80% / 75%
+npm run test:sdk      # 真实 DSH 的文件、Shell、问答、审批及 Session 恢复
+npm run test:docker   # 必须运行真实 Docker E2E，不会因漏设环境变量而跳过
 ```
 
-测试使用隔离的临时目录和带本次 Runner 标签的容器，只清理它们。运行 Docker E2E 前需保证本地存在 `dsh-cloud-runtime:0.1.3`。模型 fixture 只替代上游模型响应，未替代 DSH、文件工具、Shell、Runner 或 Docker。Git 测试实际使用 Git daemon 和 push；GitHub REST 用受控 fixture 注入响应丢失。
+测试使用隔离的临时目录和带本次 Runner 标签的容器，只清理它们。运行 Docker E2E 前需构建包含当前代码的 `dsh-cloud-runtime:0.1.3`。模型 fixture 只替代上游模型响应，未替代 DSH、文件工具、Shell、Runner 或 Docker。Git 测试实际使用 Git daemon 和 push；GitHub REST 用受控 fixture 注入响应丢失。
+
+测试范围、故障注入方式、覆盖率统计边界及 CI 说明见 [测试指南](docs/TESTING.md)。GitHub Actions 在 Linux/macOS 运行核心及 SDK 套件，并在 Linux 从锁定依赖构建镜像后运行 Docker 套件。兼容入口 `test:runtime` 仍默认跳过 Docker；完整验收应使用上面的明确命令。
 
 真实模型验收是可选的独立命令，会消耗实际模型额度。可以使用 `CLOUD_MODEL_BASE_URL`、`CLOUD_MODEL_API_KEY`、`CLOUD_MODEL_NAME`，或显式选择本机 DSH 中已配置的 Messages provider：
 

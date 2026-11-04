@@ -10,7 +10,11 @@
   "scripts": {
     "build": "node scripts/clean.mjs && tsc -p tsconfig.build.json && node scripts/build.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test tests/*.test.ts",
+    "test": "node --import tsx --test --test-timeout=60000 tests/*.test.ts",
+    "test:coverage": "node scripts/test-coverage.mjs",
+    "test:sdk": "node --import tsx --test --test-timeout=180000 tests/runtime/sdk.test.ts",
+    "test:docker": "CLOUD_DOCKER_TEST=1 node --import tsx --test --test-timeout=360000 tests/runtime/docker.test.ts",
+    "test:ci": "npm run typecheck && npm run build && npm run test:coverage && npm run test:sdk",
     "control": "node --import tsx apps/control/main.ts",
     "runner": "node --import tsx apps/runner/main.ts",
     "executor": "node --import tsx apps/executor/main.ts",

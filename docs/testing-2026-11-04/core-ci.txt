@@ -1,0 +1,203 @@
+
+> dsh-cloud@0.1.3 test:ci
+> npm run typecheck && npm run build && npm run test:coverage && npm run test:sdk
+
+
+> dsh-cloud@0.1.3 typecheck
+> tsc --noEmit
+
+
+> dsh-cloud@0.1.3 build
+> node scripts/clean.mjs && tsc -p tsconfig.build.json && node scripts/build.mjs
+
+
+> dsh-cloud@0.1.3 test:coverage
+> node scripts/test-coverage.mjs
+
+✔ a read started before a write cannot overwrite a newer cache or delete the newer in-flight read (4.57725ms)
+✔ a failed old identity cannot back off or repopulate a new identity's reads (1.025666ms)
+✔ an overlapping successful read does not cancel another request's shared rate-limit backoff (0.401709ms)
+✔ read expiry follows resource freshness and history cursors are never served from a stale cache (0.415834ms)
+✔ transient read failures back off, cap the delay and reset after successful recovery (0.341583ms)
+✔ history is fully paginated before publishing a snapshot or opening the live stream (1.09975ms)
+✔ a live event gap reconnects from a complete snapshot and ignores duplicate or obsolete callbacks (1.854875ms)
+✔ a disconnected live stream is closed and reacquires history before reconnecting (0.747083ms)
+✔ gap history never appears as a complete conversation and can recover (0.453708ms)
+✔ empty-prefix history never appears as a complete conversation and can recover (0.365292ms)
+✔ unmount during snapshot prevents late state changes and subscriptions (0.308625ms)
+✔ unmount during history prevents late state changes and subscriptions (0.336417ms)
+✔ four desktop Hosts with twenty opened idle sessions stay below the shared owner budget (742.497584ms)
+ℹ 4 Hosts / 20 opened idle sessions / 90 virtual seconds: 100 background requests, 168 initial requests, 0 HTTP 429
+✔ read coalescing, shared 429 backoff and transient errors preserve authentication (0.988041ms)
+✔ OIDC discovery failure is shared, backs off, and can subsequently initialize (0.300875ms)
+✔ logout clears local credentials when remote revocation is offline (23.667042ms)
+✔ logout clears local credentials when remote revocation is expired (19.483875ms)
+✔ logout cancels an in-flight device login before it can restore credentials (21.9795ms)
+✔ initial history failure retries the entire subscription and cleans up on unmount (6.672084ms)
+✔ parallel environment lease retries produce one incarnation and competing starts cannot replace it (119.831958ms)
+✔ a stale supervisor blocks queued dispatch and a current heartbeat safely re-enables it (70.404375ms)
+✔ invalid request framing and oversized input never leave a task or idempotency record (54.554584ms)
+✔ native and control histories paginate without gaps, reject invalid cursors and roll back a conflicting batch (152.186459ms)
+✔ publication binds checks to the exact revision and retries one operation without bypassing failed required checks (65.365541ms)
+✔ archived tasks cannot admit input and an acknowledged deletion removes history, results and executor credentials (86.576083ms)
+✔ nonterminal replays cannot regress a finalizing run or rewrite a terminal result (76.3765ms)
+✔ interaction identity retries preserve the question and cannot change its kind or originating run (59.368084ms)
+✔ idempotent creation and simultaneous inputs preserve one session and strict execution order (123.29725ms)
+✔ native history is contiguous, conflict checked, replayable and survives database restart (4405.185292ms)
+✔ paired identities are scoped; expired/fenced credentials and foreign tasks are rejected (57.032417ms)
+✔ cancellation remains pending until the supervisor confirms the process tree stopped (36.382417ms)
+✔ uncertain input pauses the queue and recovery waits for the old environment to stop (34.511542ms)
+✔ only one concurrent answer is accepted; restored runtimes reject old questions (29.031417ms)
+✔ runner and device pairing tolerate lost response without issuing a second identity (26.958875ms)
+✔ browser writes need a matching Origin and runner revocation invalidates active task tokens (29.501375ms)
+{"level":"warn","taskId":"0f938504-f68d-4f97-9896-2b973d5edb7d","error":"response lost after server commit"}
+✔ question reaches a live DSH waiter once when the delivered response is lost (2204.136209ms)
+{"level":"warn","taskId":"5d23d853-678a-4859-a70a-ddd7886fd71c","error":"response lost after server commit"}
+✔ approval reaches a live DSH waiter once when the delivered response is lost (2084.448084ms)
+✔ transient outbox failures retain their payload and permanently rejected output remains inspectable (38.262167ms)
+✔ Docker launch isolates the runtime and uses an immutable image and incarnation config (1.565166ms)
+✔ Docker inspect rejects containers belonging to another Runner (0.310166ms)
+✔ paused container is unpaused before graceful stop; timeout escalates and verifies exit (0.171417ms)
+✔ Docker cannot confirm or remove a container that still reports running (0.137167ms)
+✔ missing runtime image is pulled once and its resolved identity is returned (0.116959ms)
+✔ a reopened journal retains the exact command, consumed answer, history and per-message restore generation (116.309125ms)
+✔ legacy outbox migration is repeatable and preserves pending payloads (104.558417ms)
+✔ a conflicting native batch rolls back its entire prefix and exact replays stay idempotent (81.623625ms)
+✔ durable answers reject changed content, run identity and incarnation without replacing the first answer (35.772917ms)
+✔ transaction failure cannot persist half a command or remove an unrecorded rejected message (61.223833ms)
+✔ concurrent immutable writes preserve one complete artifact and clean temporary files on conflict (108.321584ms)
+✔ result truncation preserves identifiers and metadata, hashes original text and never mutates the full local result (1.445041ms)
+✔ a result exactly at its byte budget is unchanged and oversized essential metadata is rejected (0.158708ms)
+✔ Executor persists results and checks before marking a command complete; delivery can retry (826.278875ms)
+✔ lost prompt acknowledgement remains uncertain and closes the runtime without retrying input (54.635459ms)
+✔ idle runtime with missing receipt cannot complete a Run (54.707333ms)
+✔ idle runtime with missing turn-end cannot complete a Run (38.764959ms)
+✔ non-completed native turn persists a failed result even when the workspace is valid (369.054334ms)
+✔ local result write failure never marks a command complete or advertises an artifact (340.606042ms)
+✔ completed setup steps are durable across journal reopen while start commands run again (92.716625ms)
+✔ failed setup retains the barrier across reopen and cannot silently repeat side effects (58.972ms)
+✔ native history is uploaded in bounded batches before final status, including lost acknowledgements (67.867167ms)
+✔ concurrent sync callers share collection and network delivery (35.84825ms)
+✔ cancelling an interaction expires it exactly once and releases its waiter (69.246208ms)
+✔ stop rejects pending input, captures its last native events, and closes the SDK once (37.862834ms)
+✔ reoffered complete command is never prompted again (37.691959ms)
+✔ reoffered dispatching command is never prompted again (36.906375ms)
+✔ real Git publication reconciles lost PR response, reuses commits, updates one PR and refuses remote changes (2932.957417ms)
+✔ file preview rejects traversal and symlinks outside the workspace or into Git metadata (5.963125ms)
+✔ interrupted first checkout reaches its selected commit and preserves initialized or dirty workspaces (847.600333ms)
+✔ native adapter preserves one remote identity, retries prompt once and never activates a local Agent (125.473834ms)
+✔ control saves the exact native header and rejects a changed session identity (71.202584ms)
+✔ native file adapter confines cloud paths and leaves local file operations intact (45.38375ms)
+✔ native rename, pin and archive stay in cloud metadata without creating a local Session (146.703625ms)
+✔ stored early templates receive conservative defaults when dispatched (39.071ms)
+✔ native history subscription survives a control outage and publishes idle without a control subscriber (4058.011083ms)
+✔ location is offered only before a first local or cloud prompt, including in-flight transitions (0.58225ms)
+✔ started sessions render no location chrome; new sessions render just one compact control (4.811417ms)
+✔ uncertain recovery barrier survives archive, newer cancellation, setup retry and restart (203.446083ms)
+✔ interrupted recovery barrier survives archive, newer cancellation, setup retry and restart (108.271833ms)
+✔ schema 1 migration reconstructs an unresolved barrier hidden behind a cancelled Run (58.486834ms)
+✔ restore quarantines old unknown output, while a new unknown Run remains a protocol failure (107.867041ms)
+✔ combined result and status fit actual HTTP limits after UTF-8 and JSON escaping (6970.853708ms)
+✔ stopped-container acknowledgement survives result replay failure (35.604292ms)
+✔ database restore blocks dispatch until every Runner stops; old input never replays (169.760291ms)
+{"level":"error","path":"/v1/artifacts/09e9abe0-cecd-4ddb-9e23-4e93548ff525","error":"Saved artifact checksum does not match"}
+✔ artifact receipt is durable, idempotent, integrity checked and scoped to the owner (120.378583ms)
+✔ real streaming model proxy records returned usage, enforces model and call budget (62.37675ms)
+✔ backup and restore produce a new integrity-checked database in reconciliation mode (738.525292ms)
+✔ revocation accepts only a stop acknowledgement and closes active runs after confirmation (38.420375ms)
+{"level":"error","path":"/v1/executor/events","error":"database or disk is full"}
+✔ database write exhaustion cannot acknowledge an uncommitted native checkpoint (48.265083ms)
+✔ a consumed pairing code is retryable only inside its original expiry window (17.653833ms)
+✔ a task pins its model route while allowing credential rotation (42.080625ms)
+✔ Runner revocation stops every container before acknowledging and terminating (139.424667ms)
+✔ unconfirmed Docker stop cannot acknowledge a revoked Runner as stopped (113.444458ms)
+✔ overlapping heartbeats share an inventory probe and release the guard after failure (63.686791ms)
+✔ a foreign live incarnation blocks provisioning and is never stopped by a normal tick (61.084583ms)
+✔ complete inventory absence interrupts the old Run before allowing any replacement (57.223041ms)
+✔ Runner capacity and pending stop operations prevent a competing launch (73.33025ms)
+✔ restore reconciliation stops all containers and publishes the stopped inventory first (76.127208ms)
+✔ inspection receipt survives a lost response and Runner restart without inspecting twice (109.18175ms)
+✔ inspection failure unpauses the container; failed unpause remains recoverable at startup (71.965459ms)
+✔ Runner lock rejects a live owner and close only removes its own lock (49.509708ms)
+✔ close waits for an in-flight heartbeat before closing the journal (50.927292ms)
+✔ provisioning pins image and preserves checkout when launch response is received (560.779542ms)
+✔ provisioning pins image and preserves checkout when launch response is lost (505.526291ms)
+✔ API redirects cannot forward bearer credentials to another endpoint (28.767709ms)
+✔ API errors retain retry hints even when a gateway sends a non-JSON body (8.420667ms)
+✔ API success requires valid JSON and honours cancellation of a stalled response (5.894ms)
+✔ Retry-After supports seconds, dates, expired values and invalid input (0.613333ms)
+✔ polling delivers only contiguous unseen events and retries from its last safe cursor (2.545542ms)
+✔ polling stop suppresses late resolve callbacks and future requests (0.423292ms)
+✔ polling stop suppresses late reject callbacks and future requests (0.375458ms)
+✔ unmount during an event callback stops the rest of the batch and status updates (0.265833ms)
+✔ process execution preserves stdin, separate outputs and explicit nonzero exit results (83.520958ms)
+✔ combined process output is bounded even when failure is allowed (41.493084ms)
+✔ process timeout remains observable with allowFailure and escalates past ignored SIGTERM (3006.672583ms)
+✔ abort terminates an active process and releases its listeners (41.526083ms)
+ℹ tests 115
+ℹ suites 0
+ℹ pass 115
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8311.685167
+ℹ start of coverage report
+ℹ -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ℹ file               | line % | branch % | funcs % | uncovered lines
+ℹ -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ℹ apps               |        |          |         |
+ℹ  control           |        |          |         |
+ℹ   auth.ts          |  74.45 |    82.46 |   83.33 | 19-21 38-41 82-111 115-139 143-156 159-164
+ℹ   config.ts        |  57.02 |    75.00 |   66.67 | 14-63 68-69
+ℹ   db.ts            |  99.52 |    94.81 |   94.44 | 281-283
+ℹ   http.ts          | 100.00 |    85.00 |  100.00 |
+ℹ   recovery.ts      |  98.39 |    94.44 |  100.00 | 40-41
+ℹ   server.ts        |  95.80 |    87.39 |   89.39 | 102 152 154-169 179-184 202-206 328-341 463-465 610-611 615 868-881 924-925 950-954 956-959 992 1067-1071
+ℹ   usage.ts         |  96.30 |    86.36 |  100.00 | 33-34
+ℹ  executor          |        |          |         |
+ℹ   executor.ts      |  83.74 |    79.79 |   73.81 | 30-31 35-108 149-152 165-168 207-210 212 229-232 326-328 401-404
+ℹ   journal.ts       | 100.00 |   100.00 |  100.00 |
+ℹ   runtime.ts       |  40.98 |   100.00 |   20.00 | 13-40 43-101 106-131 133-140
+ℹ  runner            |        |          |         |
+ℹ   docker.ts        |  86.34 |    68.42 |   61.11 | 15-18 20 22-28 30-40 125 129
+ℹ   runner.ts        |  87.09 |    79.82 |   78.79 | 89 116-119 144 147-150 259-261 276 278-282 284-297 322-328 331-333 336-340 343 348 355-359 361-372 374-380
+ℹ packages           |        |          |         |
+ℹ  contracts         |        |          |         |
+ℹ   http.ts          | 100.00 |   100.00 |  100.00 |
+ℹ   index.ts         |  99.22 |    92.31 |   88.24 | 87 93
+ℹ   outbox.ts        | 100.00 |    88.89 |  100.00 |
+ℹ   process.ts       | 100.00 |    85.29 |   85.71 |
+ℹ   results.ts       | 100.00 |    95.65 |  100.00 |
+ℹ   storage.ts       | 100.00 |   100.00 |  100.00 |
+ℹ  dsh-cloud-plugin  |        |          |         |
+ℹ   index.ts         |  47.51 |    42.31 |   41.18 | 29-32 46 54-55 57 63 65-71 78 82-84 86-88 90 93-94 137-171 173-189 202 207-211 226-240 281-381
+ℹ   location.tsx     |  77.59 |    90.00 |   38.46 | 26-28 30-32 36 46-51
+ℹ   native.ts        |  75.05 |    75.29 |   71.58 | 16 93 124-131 133 140-148 150-152 159-163 166-169 171-184 209-210 224 233-241 266-276 297-306 313 316-326 330-331 334-345 348-350 360-361 363-366 372-373
+ℹ   polling.ts       | 100.00 |    97.14 |  100.00 |
+ℹ   remote.ts        | 100.00 |   100.00 |   50.00 |
+ℹ  git-provider      |        |          |         |
+ℹ   index.ts         |  93.11 |    88.57 |   94.12 | 41 66-69 179-201 224-226
+ℹ  task-ui           |        |          |         |
+ℹ   subscription.ts  | 100.00 |    93.02 |  100.00 |
+ℹ   transport.ts     |  72.64 |   100.00 |   87.50 | 5-33
+ℹ  testing           |        |          |         |
+ℹ   model-fixture.ts |  91.67 |    85.71 |  100.00 | 18-25
+ℹ -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ℹ all files          |  86.81 |    84.14 |   79.56 |
+ℹ -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ℹ end of coverage report
+
+> dsh-cloud@0.1.3 test:sdk
+> node --import tsx --test --test-timeout=180000 tests/runtime/sdk.test.ts
+
+{"realRuntime":true,"sessionId":"00838c58-c1c0-4f9c-917e-c333230a8f3a","durableSeq":64,"questions":1,"approvals":1,"modelCalls":7}
+✔ real DSH writes and reads the same workspace, asks a question, then resumes its native session (2842.537125ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3063.881875
