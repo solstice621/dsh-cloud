@@ -1,7 +1,7 @@
 import { Context } from "@deepseek-ai/cordis";
 import { TypertRemoteService, Remote } from "@deepseek-ai/dsh-typert-protocol";
 import type {} from "@deepseek-ai/dsh-typert-registry";
-import type {} from "@deepseek-ai/dsh-tools";
+import { defineTool, type ParameterSchemaSpec } from "@deepseek-ai/dsh-tools";
 import z from "@deepseek-ai/schemastery";
 import { z as schema } from "zod";
 import { mkdir, readFile, writeFile, rename, rm } from "node:fs/promises";
@@ -195,37 +195,45 @@ declare module "@deepseek-ai/cordis" {
 }
 const taskParam = {
   type: "string" as const,
-  required: true,
+  required: true as const,
   description: "Existing cloud task UUID.",
 };
 export function apply(ctx: Context, config: Config) {
   const cloud = new CloudService(ctx, config);
+  registerCloudTools(ctx, cloud);
+}
+
+export function registerCloudTools(
+  ctx: Pick<Context, "effect" | "tools">,
+  cloud: Pick<CloudService, "url" | "request">,
+) {
   const register = (
     name: string,
     description: string,
-    parameters: any,
+    parameters: ParameterSchemaSpec,
     execute: (args: any, key: string) => Promise<unknown>,
   ) =>
     ctx.effect(() =>
-      ctx.tools.register({
+      // The author-facing parameter map must be compiled before registration.
+      // Passing it directly leaks required:true and omits the JSON Schema root.
+      ctx.tools.register(defineTool({
         name,
         description,
         parameters,
         output: {
           schema: {
             type: "object",
-            properties: { summary: { type: "string" } },
-            required: ["summary"],
+            properties: { summary: { type: "string", required: true } },
             additionalProperties: false,
           },
           render: (_args, value) => [
-            { type: "text", text: (value as any).summary },
+            { type: "text", text: value.summary },
           ],
         },
         execute: async (args, exec) => ({
           summary: JSON.stringify(await execute(args, String(exec.callId))),
         }),
-      }),
+      })),
     );
   const link = (taskId: string) => `${cloud.url}/tasks/${taskId}`;
   register(
